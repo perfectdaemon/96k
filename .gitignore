@@ -1,0 +1,10 @@
+*.sdf
+
+/bin/XRT/*.*
+
+*.user
+
+*.filters
+
+*.suo
+*.opensdf
