@@ -11,6 +11,7 @@
 { modification, are permitted under the terms of the BSD License.   /
 {=================================================================*/
 #include "render.h"
+#include "resources.h"
 
 #ifdef OGL
 
@@ -312,6 +313,92 @@ void ShaderProgram::bind() {
 	setAllUniforms();
 }
 
+// Texture ---------------------------------------------------
+Texture::Texture(int width, int height, TexFormat format, const void* data, int size) {
+	struct FormatInfo {
+		int iformat, eformat, type;
+	} info[] = {
+		{GL_RGB8,							GL_RGB,				GL_UNSIGNED_BYTE},
+		{GL_RGB8,							GL_BGR,				GL_UNSIGNED_BYTE},
+		{GL_RGBA,							GL_RGBA,			GL_UNSIGNED_BYTE},
+		{GL_RGBA,							GL_BGRA,			GL_UNSIGNED_BYTE},
+		{GL_ALPHA,							GL_ALPHA,			GL_UNSIGNED_BYTE},
+		{GL_LUMINANCE8_ALPHA8,				GL_LUMINANCE_ALPHA,	GL_UNSIGNED_BYTE},
+		{GL_COMPRESSED_RGB_PVRTC_2BPPV1,	GL_FALSE,			GL_FALSE},
+		{GL_COMPRESSED_RGBA_PVRTC_2BPPV1,	GL_FALSE,			GL_FALSE},
+		{GL_COMPRESSED_RGB_PVRTC_4BPPV1,	GL_FALSE,			GL_FALSE},
+		{GL_COMPRESSED_RGBA_PVRTC_4BPPV1,	GL_FALSE,			GL_FALSE},
+		{GL_COMPRESSED_RGB_S3TC_DXT1,		GL_FALSE,			GL_FALSE},
+		{GL_COMPRESSED_RGBA_S3TC_DXT1,		GL_FALSE,			GL_FALSE},
+		{GL_COMPRESSED_RGBA_S3TC_DXT3,		GL_FALSE,			GL_FALSE},
+		{GL_COMPRESSED_RGBA_S3TC_DXT5,		GL_FALSE,			GL_FALSE},
+		{GL_ETC1_RGB8_OES,					GL_FALSE,			GL_FALSE},
+	};	
+
+	glGenTextures(1, &obj);
+	this->width = width;
+	this->height = height;
+	this->data = (void *) data;
+	
+	glBindTexture(GL_TEXTURE_2D, obj);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	int aniso;
+	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso);
+
+	FormatInfo &fmt = info[format];
+	
+	if (format >= TEX_PVRTC2)
+		if (size > 0)
+			glCompressedTexImage2D(GL_TEXTURE_2D, 0, fmt.iformat, width, height, 0, size, data);
+		else
+			LOG("texture: compressed texture with no size is not allowed");
+	else
+		glTexImage2D(GL_TEXTURE_2D, 0, fmt.iformat, width, height, 0, fmt.eformat, fmt.type, data);	
+}
+
+Texture::Texture(Stream stream, TexExt ext, bool freeStreamOnFinish) {
+	
+}
+
+Texture::~Texture() {
+	glDeleteTextures(1, &obj);
+	delete data;
+}
+
+void Texture::setWrap(TexWrap wrap) {
+	static const GLint texWrap[wMAX] = { GL_CLAMP, GL_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER, GL_MIRRORED_REPEAT };
+	glBindTexture(GL_TEXTURE_2D, obj);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texWrap[wrap]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texWrap[wrap]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, texWrap[wrap]);
+}
+
+void Texture::bind(int sampler) {
+	Render::setTexture(obj, sampler);
+}
+
+// Material --------------------------------------------------
+
+Material::Material(ShaderProgram shader) {
+}
+
+Material::Material(Stream stream, bool freeStreamOnFinish) {
+}
+
+Material::~Material() {
+}
+
+void Material::addTexture(const Texture *texture, const char* name) {
+}
+
+void Material::bind() {
+}
 
 // Render ----------------------------------------------------
 void Render::init() {
@@ -414,51 +501,6 @@ void Render::clear(ClearMask clearMask, float r, float g, float b, float a) {
 	}
 }
 
-TextureObj Render::createTexture(TexFormat texFormat, MipMap *mipMaps, int mipCount) {
-	struct FormatInfo {
-		int iformat, eformat, type;
-	} info[] = {
-		{GL_RGBA,							GL_RGBA,			GL_UNSIGNED_BYTE},
-		{GL_ALPHA,							GL_ALPHA,			GL_UNSIGNED_BYTE},
-		{GL_LUMINANCE8_ALPHA8,				GL_LUMINANCE_ALPHA,	GL_UNSIGNED_BYTE},
-		{GL_COMPRESSED_RGB_PVRTC_2BPPV1,	GL_FALSE,			GL_FALSE},
-		{GL_COMPRESSED_RGBA_PVRTC_2BPPV1,	GL_FALSE,			GL_FALSE},
-		{GL_COMPRESSED_RGB_PVRTC_4BPPV1,	GL_FALSE,			GL_FALSE},
-		{GL_COMPRESSED_RGBA_PVRTC_4BPPV1,	GL_FALSE,			GL_FALSE},
-		{GL_COMPRESSED_RGB_S3TC_DXT1,		GL_FALSE,			GL_FALSE},
-		{GL_COMPRESSED_RGBA_S3TC_DXT1,		GL_FALSE,			GL_FALSE},
-		{GL_COMPRESSED_RGBA_S3TC_DXT3,		GL_FALSE,			GL_FALSE},
-		{GL_COMPRESSED_RGBA_S3TC_DXT5,		GL_FALSE,			GL_FALSE},
-		{GL_ETC1_RGB8_OES,					GL_FALSE,			GL_FALSE},
-	};
-
-	GLuint ID;
-
-	glGenTextures(1, &ID);
-	glBindTexture(GL_TEXTURE_2D, ID);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipCount > 1 ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	int aniso;
-	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso);
-
-	FormatInfo &fmt = info[texFormat];
-
-	for (int i = 0; i < mipCount; i++) {
-		MipMap &m = mipMaps[i];
-		if (texFormat >= TEX_PVRTC2)
-			glCompressedTexImage2D(GL_TEXTURE_2D, i, fmt.iformat, m.width, m.height, 0, m.size, m.data);
-		else
-			glTexImage2D(GL_TEXTURE_2D, i, fmt.iformat, m.width, m.height, 0, fmt.eformat, fmt.type, m.data);
-	}
-
-	return ID;
-}
-
 void Render::setViewport(int left, int top, int width, int height) {
 	glViewport(left, top, width, height);
 }
@@ -549,11 +591,6 @@ bool Render::setShader(ShaderObj obj) {
 	}
 	return false;
 }
-
-void Render::freeTexture(TextureObj obj) {
-	if (obj) glDeleteTextures(1, &obj);
-}
-
 
 void Render::drawTriangles(IndexBuffer *iBuffer, VertexBuffer *vBuffer, int indexFirst, int indexCount) {
 	if (m_ibuffer != iBuffer) { iBuffer->bind(); m_ibuffer = iBuffer; };

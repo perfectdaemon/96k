@@ -78,15 +78,10 @@
 	typedef int Index;
 #endif
 
-enum TexFormat { TEX_RGBA8 = 0, TEX_A_8, TEX_AI_88,
+enum TexFormat { TEX_RGB8 = 0, TEX_BGR8, TEX_RGBA8, TEX_BGRA8, TEX_A_8, TEX_AI_88,
 				 TEX_PVRTC2, TEX_PVRTC2A, TEX_PVRTC4, TEX_PVRTC4A,
 				 TEX_DXT1, TEX_DXT1A, TEX_DXT3, TEX_DXT5,
-				 TEX_ETC1, TEX_ATF, TEX_MAX };
-
-struct MipMap {
-	void *data;
-	int width, height, size;
-};
+				 TEX_ETC1, TEX_MAX };
 
 enum ClearMask {
 	CLEAR_ALL,
@@ -265,9 +260,53 @@ public:
 	void link();
 };
 
-struct RenderParams {
-	mat4 mViewProj, mModel;	
+enum TexWrap { wClamp, wRepeat, wClampToEdge, wClampToBorder, wMirrorRepeat, wMAX };
+enum TexExt { extBmp, extTga };
+
+struct Texture {
+	TextureObj obj;
+	void *data;
+	int width, height;	
+	
+	Texture(int width, int height, TexFormat format, const void* data, int size = -1);
+	Texture(Stream stream, TexExt ext, bool freeStreamOnFinish = true);
+	~Texture();
+
+	void setWrap(TexWrap wrap);
+
+	void bind(int sampler = 0);
+};
+
+struct TextureMaterialInfo {
+	Texture *texture;
+	char *uniformName;
+	int shaderInternalIndex;
+};
+
+#define MAX_SAMPLES 8
+
+struct Material {
+	ShaderProgram *shader;
+	TextureMaterialInfo *textures[MAX_SAMPLES];
 	vec4 color;
+	BlendMode blend;
+	bool depthWrite, depthTest;
+	FuncComparison depthTestFunc;
+	CullMode cull;
+
+	Material(ShaderProgram shader);
+	Material(Stream stream, bool freeStreamOnFinish);
+	~Material();
+
+	void addTexture(const Texture *texture, const char* name);
+
+	void bind();
+};
+
+struct RenderParams {
+	mat4 mViewProj, mModel, mModelViewProj;	
+	vec4 color;
+	void calculateMVP();
 };
 
 struct Render {
@@ -279,7 +318,7 @@ protected:
 	static int m_active_sampler;
 	static VertexBuffer *m_vbuffer;
 	static IndexBuffer *m_ibuffer;
-    static TextureObj m_active_texture[8];
+    static TextureObj m_active_texture[MAX_SAMPLES];
     static ShaderObj m_active_shader;
 public:
 	static int statSetTex, statTriCount;
@@ -297,11 +336,7 @@ public:
 	static void resize(int width, int height);
 	static void resetStates();
 	static void clear(ClearMask clearMask, float r, float g, float b, float a);
-
-	static TextureObj createTexture(TexFormat texFormat, MipMap *mipMaps, int mipCount);	
-
-	static void freeTexture(TextureObj obj);	
-
+	
 	static void setViewport(int left, int top, int width, int height);
 	static void setCulling(CullMode value);
 	static void setBlending(BlendMode value);
@@ -322,9 +357,8 @@ enum ShaderParam {
 };
 
 const ShaderParamInfo SHADER_PARAM_INFO[SP_MAX] = {
-	{utMat4, "uViewProjMatrix", 1, -1, &Render::params.mViewProj},
-	{utMat4, "uModelMatrix", 	1, -1, &Render::params.mModel},
-	{utVec4, "uColor", 			1, -1, &Render::params.color},
+	{utMat4, "uModelViewProj", 1, -1, &Render::params.mModelViewProj},	
+	{utVec4, "uColor",		   1, -1, &Render::params.color},
 };
 
 #endif // RENDER_H
