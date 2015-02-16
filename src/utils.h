@@ -101,6 +101,8 @@ struct vec2 {
 	explicit vec2(float x, float y) : x(x), y(y) {}
 	explicit vec2(const int value) : x((float)value), y((float)value) {}
 	explicit vec2(const int x, const int y) : x((float)x), y((float)y) {}
+	
+	inline bool operator == (const vec2 &v) { return abs(x - v.x) < _EPS && abs(y - v.y) < _EPS; }
 
 	inline vec2& operator += (const vec2 &v) { x+=v.x; y+=v.y; return *this; }
 	inline vec2& operator -= (const vec2 &v) { x-=v.x; y-=v.y; return *this; }
@@ -141,6 +143,8 @@ struct vec3 {
 	vec3(const vec2 &xy, float z) : x(xy.x), y(xy.y), z(z) {}
 
 	vec2& xy() { return *((vec2*)&x); }
+
+	inline bool operator == (const vec3 &v) { return abs(x - v.x) < _EPS && abs(y - v.y) < _EPS && abs(z - v.z) < _EPS; }
 
 	inline vec3& operator += (const vec3 &v) { x+=v.x; y+=v.y; z+=v.z; return *this; }
 	inline vec3& operator -= (const vec3 &v) { x-=v.x; y-=v.y; z-=v.z; return *this; }

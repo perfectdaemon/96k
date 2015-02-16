@@ -45,6 +45,7 @@ void Core::deinit() {
 }
 
 void Core::pause() {
+	LOG("Core::pause\n");
 	game->pause();
 }
 

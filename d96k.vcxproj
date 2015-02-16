@@ -120,6 +120,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\core.cpp" />
     <ClCompile Include="src\renderGL.cpp" />
+    <ClCompile Include="src\resources.cpp" />
+    <ClCompile Include="src\scene.cpp" />
     <ClCompile Include="src\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -127,7 +129,9 @@
     <ClInclude Include="src\core.h" />
     <ClInclude Include="src\input.h" />
     <ClInclude Include="src\render.h" />
+    <ClInclude Include="src\render2d.h" />
     <ClInclude Include="src\resources.h" />
+    <ClInclude Include="src\scene.h" />
     <ClInclude Include="src\utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

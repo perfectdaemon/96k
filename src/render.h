@@ -268,13 +268,35 @@ struct Texture {
 	void *data;
 	int width, height;	
 	
-	Texture(int width, int height, TexFormat format, const void* data, int size = -1);
-	Texture(Stream stream, TexExt ext, bool freeStreamOnFinish = true);
+	
+	static Texture* init(int width, int height, TexFormat format, const void* data, int size = -1);
+	static Texture* init(Stream *stream, TexExt ext, bool freeStreamOnFinish = true);
+	Texture();
 	~Texture();
 
 	void setWrap(TexWrap wrap);
 
 	void bind(int sampler = 0);
+};
+
+struct TextureRegion {
+	Texture *texture;
+	float tx, ty, tw, th;
+	char *name;
+	bool rotated;
+};
+
+enum TextureAtlasExt { extCheetah };
+
+struct TextureAtlas : Texture {
+protected:
+	Array m_regions;
+public:
+	static TextureAtlas* init(Stream *imageStream, TexExt ext, Stream *atlasStream, TextureAtlasExt extAtlas, bool freeStreamOnFinish = true);
+	TextureAtlas();
+	~TextureAtlas();
+
+	TextureRegion* getRegion(const char *name);
 };
 
 struct TextureMaterialInfo {
@@ -294,8 +316,9 @@ struct Material {
 	FuncComparison depthTestFunc;
 	CullMode cull;
 
-	Material(ShaderProgram shader);
-	Material(Stream stream, bool freeStreamOnFinish);
+	static Material* init(const ShaderProgram *shader);
+	static Material* init(Stream *stream, bool freeStreamOnFinish);
+	Material();
 	~Material();
 
 	void addTexture(const Texture *texture, const char* name);

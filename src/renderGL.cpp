@@ -314,7 +314,12 @@ void ShaderProgram::bind() {
 }
 
 // Texture ---------------------------------------------------
-Texture::Texture(int width, int height, TexFormat format, const void* data, int size) {
+Texture::Texture() {
+	glGenTextures(1, &obj);
+	data = NULL;
+}
+
+Texture* Texture::init(int width, int height, TexFormat format, const void* data, int size) {
 	struct FormatInfo {
 		int iformat, eformat, type;
 	} info[] = {
@@ -334,13 +339,12 @@ Texture::Texture(int width, int height, TexFormat format, const void* data, int 
 		{GL_COMPRESSED_RGBA_S3TC_DXT5,		GL_FALSE,			GL_FALSE},
 		{GL_ETC1_RGB8_OES,					GL_FALSE,			GL_FALSE},
 	};	
-
-	glGenTextures(1, &obj);
-	this->width = width;
-	this->height = height;
-	this->data = (void *) data;
+	Texture *t = new Texture();	
+	t->width = width;
+	t->height = height;
+	t->data = (void *) data;
 	
-	glBindTexture(GL_TEXTURE_2D, obj);
+	glBindTexture(GL_TEXTURE_2D, t->obj);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -357,18 +361,28 @@ Texture::Texture(int width, int height, TexFormat format, const void* data, int 
 		if (size > 0)
 			glCompressedTexImage2D(GL_TEXTURE_2D, 0, fmt.iformat, width, height, 0, size, data);
 		else
-			LOG("texture: compressed texture with no size is not allowed");
+			LOG("texture: compressed texture with no size is not allowed\n");
 	else
 		glTexImage2D(GL_TEXTURE_2D, 0, fmt.iformat, width, height, 0, fmt.eformat, fmt.type, data);	
+
+	return t;
 }
 
-Texture::Texture(Stream stream, TexExt ext, bool freeStreamOnFinish) {
+Texture* Texture::init(Stream *stream, TexExt ext, bool freeStreamOnFinish) {
+	TextureRes *res = new TextureRes(stream, ext);
+	Texture *t = Texture::init(res->width, res->height, res->format, res->data);
 	
+	delete res;
+	if (freeStreamOnFinish)
+		delete stream;
+
+	return t;
 }
 
 Texture::~Texture() {
 	glDeleteTextures(1, &obj);
-	delete data;
+	if (data)
+		delete data;
 }
 
 void Texture::setWrap(TexWrap wrap) {
@@ -383,21 +397,89 @@ void Texture::bind(int sampler) {
 	Render::setTexture(obj, sampler);
 }
 
-// Material --------------------------------------------------
+// TextureAtlas ----------------------------------------------
 
-Material::Material(ShaderProgram shader) {
+TextureAtlas::TextureAtlas() {
+
 }
 
-Material::Material(Stream stream, bool freeStreamOnFinish) {
+TextureAtlas* TextureAtlas::init(Stream *imageStream, TexExt ext, 
+								 Stream *atlasStream, TextureAtlasExt extAtlas, 
+								 bool freeStreamOnFinish) {
+	LOG("TextureAtlas init is not implemented\n");
+	return NULL;
+}
+
+TextureAtlas::~TextureAtlas() {
+	for (int i = 0; i < m_regions.length(); i++)
+		delete m_regions.get(i);
+}
+
+TextureRegion* TextureAtlas::getRegion(const char *name) {
+	for (int i = 0; i < m_regions.length(); i++) {
+		TextureRegion *region = (TextureRegion *) m_regions.get(i);
+		if (strcmp(region->name, name) == 0) {
+			return region;
+		}
+	}
+	LOG("atlas: region `%s` is not defined\n", name);
+	return NULL;
+}
+
+// Material --------------------------------------------------
+
+Material::Material() {
+	blend = BlendMode::BLEND_ALPHA;
+	color = vec4(1);
+	cull = CullMode::CULL_BACK;
+	depthTest = true;
+	depthWrite = true;
+	depthTestFunc = FuncComparison::fcLess;
+
+	for (int i = 0; i < MAX_SAMPLES; i++)
+		textures[i] = NULL;
+}
+
+Material* Material::init(const ShaderProgram *shader) {
+	Material *m = new Material();
+	m->shader = (ShaderProgram *)shader;
+	return m;
+}
+
+Material* Material::init(Stream *stream, bool freeStreamOnFinish) {
+	LOG("Material init from stream is not implemented\n");
+	return NULL;
 }
 
 Material::~Material() {
+	for (int i = 0; i < MAX_SAMPLES; i++)
+		if (textures[i])
+			delete textures[i];
+	
 }
 
 void Material::addTexture(const Texture *texture, const char* name) {
+	LOG("Material add texture is not implemented\n");
 }
 
 void Material::bind() {
+	Render::setBlending(blend);
+	Render::setCulling(cull);
+	Render::setDepthWrite(depthWrite);
+	Render::setDepthTest(depthTest);
+	Render::setDepthFunc(depthTestFunc);
+
+	Render::params.color = color;
+	for (int i = 0; i < MAX_SAMPLES; i++)
+		textures[i]->texture->bind(i);
+	
+	shader->bind();
+}
+
+// RenderParams ----------------------------------------------
+
+void RenderParams::calculateMVP() {
+	this->mModelViewProj = mViewProj * mModel;
 }
 
 // Render ----------------------------------------------------

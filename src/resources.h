@@ -1,13 +1,19 @@
 #ifndef RESOURCES_H
 #define RESOURCES_H
 
+#include "utils.h"
+#include "render.h"
 
 struct TextureRes {
+private:
+	void loadFromBmp(Stream *stream);
+	void loadFromTga(Stream *stream);
+public:
 	TexFormat format;
 	void *data;
 	int width, height;	
 
-	TextureRes(Stream stream, TexExt ext);
+	TextureRes(Stream *stream, TexExt ext);
 	~TextureRes();
 };
 
@@ -16,14 +22,10 @@ struct FontRes {
 	void *data;
 	int charCount;
 
-	FontRes(Stream stream);
+	FontRes(Stream *stream);
 	~FontRes();
 };
 
-char * loadText(const Stream stream);
-
-//function LoadFontData(const Stream: TglrStream; out CharCount: LongWord): Pointer;
-
-//function LoadText(const Stream: TglrStream): PAnsiChar;
+char * loadText(const Stream *stream);
 
 #endif // RESOURCES_H
