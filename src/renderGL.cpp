@@ -458,8 +458,20 @@ Material::~Material() {
 	
 }
 
-void Material::addTexture(const Texture *texture, const char* name) {
-	LOG("Material add texture is not implemented\n");
+void Material::addTexture(const Texture *texture, const char *name, int sampler) {
+	if (sampler >= MAX_SAMPLES || sampler < 0) {
+		LOG("material: sampler `%d` is not supported", sampler);
+		return;
+	}
+	
+	if (!textures[sampler]) {
+		textures[sampler] = new TextureMaterialInfo();
+	}
+
+	textures[sampler]->texture = (Texture *)texture;
+	textures[sampler]->uniformName = (char *)name;
+	textures[sampler]->shaderInternalIndex = -1;
+	shader->setUniform(utSampler, 1, (const void *)sampler, name, textures[sampler]->shaderInternalIndex);	
 }
 
 void Material::bind() {

@@ -321,7 +321,7 @@ struct Material {
 	Material();
 	~Material();
 
-	void addTexture(const Texture *texture, const char* name);
+	void addTexture(const Texture *texture, const char *name, int sampler);
 
 	void bind();
 };
