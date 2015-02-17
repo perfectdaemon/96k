@@ -15,8 +15,6 @@
 #include "render.h"
 #include "utils.h"
 
-#include <gl/GL.h>
-
 Game::Game() 
 {
 
