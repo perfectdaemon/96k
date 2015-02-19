@@ -119,6 +119,7 @@
     <ClCompile Include="game\game.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\core.cpp" />
+    <ClCompile Include="src\render2d.cpp" />
     <ClCompile Include="src\renderGL.cpp" />
     <ClCompile Include="src\resources.cpp" />
     <ClCompile Include="src\scene.cpp" />

@@ -288,7 +288,7 @@ struct TextureRegion {
 
 enum TextureAtlasExt { extCheetah };
 
-struct TextureAtlas : Texture {
+struct TextureAtlas : public Texture {
 protected:
 	Array m_regions;
 public:

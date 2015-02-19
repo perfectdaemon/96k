@@ -49,6 +49,8 @@ static float _max(float a, float b) { return a > b ? a : b; }
 static float _sign(float x) { return x < 0.0f ? -1.0f : (x > 0.0f ? 1.0f : 0.0f); }
 static float _clamp(float x, float a, float b) { return x < a ? a : (x > b ? b : x); }
 
+static float _equalf(float a, float b) { return abs(a - b) < _EPS; }
+
 static int _min(int a, int b) { return a < b ? a : b; }
 static int _max(int a, int b) { return a > b ? a : b; }
 static int _sign(int x) { return x < 0.0f ? -1 : (x > 0 ? 1 : 0); }
@@ -103,6 +105,7 @@ struct vec2 {
 	explicit vec2(const int x, const int y) : x((float)x), y((float)y) {}
 	
 	inline bool operator == (const vec2 &v) { return abs(x - v.x) < _EPS && abs(y - v.y) < _EPS; }
+	inline bool operator != (const vec2 &v) { return !(*this == v); }
 
 	inline vec2& operator += (const vec2 &v) { x+=v.x; y+=v.y; return *this; }
 	inline vec2& operator -= (const vec2 &v) { x-=v.x; y-=v.y; return *this; }
