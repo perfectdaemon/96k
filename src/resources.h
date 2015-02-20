@@ -28,4 +28,14 @@ struct FontRes {
 
 char * loadText(const Stream *stream);
 
+
+struct Default {
+public:
+	static bool isInited;
+	static ShaderProgram *spriteShader;
+
+	static void init();
+	static void deinit();	
+};
+
 #endif // RESOURCES_H

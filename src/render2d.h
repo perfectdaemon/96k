@@ -51,11 +51,40 @@ public:
 		m_count(0) { }
 	~SpriteBatch() { delete vb; delete ib; }
 	
-	virtual void begin();
-	virtual void end();
+	void begin();
+	void end();
 
-	virtual void render(Sprite *sprite);
-	virtual void render(Sprite **sprites, int count);// { for (int i = 0; i < count; render(sprites[i++])) ; }
+	void render(Sprite *sprite);
+	void render(Sprite **sprites, int count) { for (int i = 0; i < count; render(sprites[i++])) ; }
+};
+
+struct Font {
+private:
+	struct CharData {
+		wchar_t id;
+		unsigned int py, w, h;
+		float tx, ty, tw, th;
+	};
+
+	CharData *charData;
+	unsigned int m_charCount;
+	CharData *table[MAXSHORT];
+	Texture *texture;
+	Material *material;
+public:
+	unsigned int maxCharHeight;
+
+	Font() : maxCharHeight(0), m_charCount(0), charData(NULL), texture(NULL), material(NULL) { }
+	~Font() { 
+		free(charData); 
+		delete texture;
+		delete material;
+	}
+
+	static Font* init(Stream *stream, bool freeStreamOnFinish = true);
+};
+
+struct Text : public Node {
 };
 
 #endif // RENDER2D_H

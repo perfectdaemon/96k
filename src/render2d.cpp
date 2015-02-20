@@ -1,4 +1,5 @@
 #include "render2d.h"
+#include "resources.h"
 
 void Sprite::setRotation(float rotation) {
 	if (!_equalf(rotation, m_rot)) {
@@ -103,4 +104,32 @@ void SpriteBatch::render(Sprite *sprite) {
 		m_iData[m_count * 6 + i] = spriteIndices[i] + m_count * 4;
 
 	m_count++;
+}
+
+// Font ------------------------------------------------------
+
+Font* Font::init(Stream *stream, bool freeStreamOnFinish) {
+	Font *f = new Font();	
+	f->material = Material::init(Default::isInited ? Default::spriteShader : NULL);
+	
+	FontRes *fRes = new FontRes(stream);
+	TextureRes *tRes = fRes->texture;
+
+	f->texture = Texture::init(tRes->width, tRes->height, tRes->format, tRes->data);
+
+	f->charData = (CharData *)fRes->data;
+	f->m_charCount = fRes->charCount;
+
+	for (int i = 0; i < f->m_charCount; i++) {
+		f->table[f->charData[i].id] = &f->charData[i];
+		if (f->charData[i].h > f->maxCharHeight)
+			f->maxCharHeight = f->charData[i].h;
+	}
+
+	delete fRes;
+	
+	if (freeStreamOnFinish)
+		delete stream;
+
+	return f;
 }

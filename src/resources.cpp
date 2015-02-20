@@ -37,3 +37,15 @@ FontRes::~FontRes() {
 char * loadText(const Stream *stream) {
 	return NULL;
 }
+
+bool Default::isInited;
+ShaderProgram *Default::spriteShader;
+
+void Default::init() {
+	isInited = true;
+}
+
+void Default::deinit() {
+	if (!isInited)
+		return;
+}
