@@ -26,13 +26,14 @@ struct FontRes {
 	~FontRes();
 };
 
-char * loadText(const Stream *stream);
+char * loadText(Stream *stream);
 
 
 struct Default {
 public:
 	static bool isInited;
 	static ShaderProgram *spriteShader;
+	static Texture *blankTexture;
 
 	static void init();
 	static void deinit();	

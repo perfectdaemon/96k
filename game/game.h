@@ -14,9 +14,19 @@
 #define GAME_H
 
 #include "input.h"
+#include "render2d.h"
+#include "scene.h"
+
+#define SPRITE_COUNT 5
 
 struct Game {	
+	
+	SpriteBatch batch;
+	Sprite *sprites[SPRITE_COUNT];
 
+	Camera *camera;
+
+	Material *mat;
     Game();
     ~Game();
     void pause();

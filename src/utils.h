@@ -65,8 +65,7 @@ struct PackFile {
 
 struct Stream {
 private:
-	void setPtrSize(void *ptr, int size);
-	void setSize(int _size);
+	bool m_ownMemory;
 public:
 	char *ptr;
 	int pos, size;
@@ -83,7 +82,9 @@ public:
 	static int packSet;
 
 	Stream(Hash hash);
-	Stream(void *_ptr, int _size);
+	Stream(void *_ptr, int _size) : ptr((char *)_ptr), pos(0), size(_size), m_ownMemory(false) { }
+	Stream(int _size) : ptr(new char[_size]), size(_size), pos(0), m_ownMemory(true) { }
+	Stream(const char *fileName);
 	~Stream();
 	bool    eof() { return pos >= size; }
 	int     seek(int offset) { pos += offset; return pos; }

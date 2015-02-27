@@ -42,14 +42,17 @@ enum CameraProjectionMode { pmOrtho, pmPerspective };
 enum CameraPivotMode { pTopLeft, pCenter, pBottomRight };
 
 struct Camera : Node {
-protected:
-	CameraPivotMode pivotMode;
-	CameraProjectionMode projMode;
+private:
+	CameraPivotMode m_pivotMode;
+	CameraProjectionMode m_projMode;
 	int m_x, m_y, m_w, m_h;
 	float m_FOV, m_zNear, m_zFar, m_scale;
+	mat4 m_projMatrix;
+
+	void rebuildProjMatrix();
 public:
 	Camera();
-	~Camera();
+	~Camera() { }
 	
 	virtual void setProjParams(int x, int y, int w, int h);
 	virtual void setProjParams(int x, int y, int w, int h, 
@@ -57,19 +60,19 @@ public:
 		CameraProjectionMode projMode,
 		CameraPivotMode pivotMode);
 
-	virtual void setViewParams(vec3 selfPos, vec3 targetPos, vec3 up);
+	void setViewParams(vec3 &selfPos, vec3 &targetPos, vec3 &up);
 
-	virtual void translate(float alongUp, float alongRight, float anlongDir);
-	virtual void rotate(float delta, vec3 axis);
+	void translate(float alongUp, float alongRight, float alongDir);
+	void rotate(float delta, vec3 &axis);
 	
-	virtual float scale() { return m_scale; }
-	virtual void setScale();
+	float scale() { return m_scale; }
+	void setScale(float scale);
 
-	virtual vec2 screenToScene(vec2 screenPosition);
+	vec2 screenToScene(vec2 &screenPosition);
 
-	virtual void update();
+	void update();
 
-	void render();
+	void render() { }
 };
 
 #endif // SCENE_H

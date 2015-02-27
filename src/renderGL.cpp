@@ -55,7 +55,7 @@ PFNGLATTACHSHADERPROC glAttachShader;
 PFNGLCOMPILESHADERPROC glCompileShader;
 PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
 PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
-PFNGLUNIFORM1IVPROC glUniform1iv;
+PFNGLUNIFORM1IPROC glUniform1i;
 PFNGLUNIFORM1FVPROC glUniform1fv;
 PFNGLUNIFORM2FVPROC glUniform2fv;
 PFNGLUNIFORM3FVPROC glUniform3fv;
@@ -97,7 +97,7 @@ int				Render::width, Render::height, Render::m_active_sampler;
 TextureObj		Render::m_active_texture[8];
 ShaderObj		Render::m_active_shader;
 RenderParams	Render::params;
-int				Render::statSetTex, Render::statTriCount;
+int				Render::statSetTex, Render::statTriCount, Render::statDIPCount;
 VertexBuffer	*Render::m_vbuffer;
 IndexBuffer		*Render::m_ibuffer;
 
@@ -149,31 +149,47 @@ void VertexBuffer::bind() {
 
 	switch (format) {
 	case VF_PT22 :
+		glEnableVertexAttribArray(vaTexCoord0);
+		glEnableVertexAttribArray(vaCoord);
 		glVertexAttribPointer(vaTexCoord0, 2, GL_FLOAT, false, VertexStride[format], &vPT22->tc);
 		glVertexAttribPointer(vaCoord, 2, GL_FLOAT, false, VertexStride[format], &vPT22->pos);
 		break;
 	case VF_PT32 :
+		glEnableVertexAttribArray(vaTexCoord0);
+		glEnableVertexAttribArray(vaCoord);
 		glVertexAttribPointer(vaTexCoord0, 2, GL_FLOAT, false, VertexStride[format], &vPT32->tc);
 		glVertexAttribPointer(vaCoord, 3, GL_FLOAT, false, VertexStride[format], &vPT32->pos);
 		break;
 	case VF_PT34 :
+		glEnableVertexAttribArray(vaTexCoord0);
+		glEnableVertexAttribArray(vaCoord);
 		glVertexAttribPointer(vaTexCoord0, 4, GL_FLOAT, false, VertexStride[format], &vPT34->tc);
 		glVertexAttribPointer(vaCoord, 3, GL_FLOAT, false, VertexStride[format], &vPT34->pos);
 		break;
 	case VF_PT34s :
+		glEnableVertexAttribArray(vaTexCoord0);
+		glEnableVertexAttribArray(vaCoord);
 		glVertexAttribPointer(vaTexCoord0, 4, GL_SHORT, false, VertexStride[format], &vPT34s->tc);
 		glVertexAttribPointer(vaCoord, 3, GL_FLOAT, false, VertexStride[format], &vPT34s->pos);
 		break;
 	case VF_PTN_324 :
+		glEnableVertexAttribArray(vaTexCoord0);
+		glEnableVertexAttribArray(vaCoord);
+		glEnableVertexAttribArray(vaNormal);
 		glVertexAttribPointer(vaNormal, 4, GL_UNSIGNED_BYTE, true, VertexStride[format], &vPTN_324->n);
 		glVertexAttribPointer(vaTexCoord0, 2, GL_FLOAT, false, VertexStride[format], &vPTN_324->tc);
 		glVertexAttribPointer(vaCoord, 3, GL_FLOAT, false, VertexStride[format], &vPTN_324->pos);
 		break;
 	case VF_PN_34 :
+		glEnableVertexAttribArray(vaNormal);
+		glEnableVertexAttribArray(vaCoord);
 		glVertexAttribPointer(vaNormal, 4, GL_UNSIGNED_BYTE, true, VertexStride[format], &vPN_34->n);
 		glVertexAttribPointer(vaCoord, 3, GL_FLOAT, false, VertexStride[format], &vPN_34->pos);
 		break;
 	case VF_PTC_324 :
+		glEnableVertexAttribArray(vaColor);
+		glEnableVertexAttribArray(vaTexCoord0);
+		glEnableVertexAttribArray(vaCoord);
 		glVertexAttribPointer(vaColor, 4, GL_FLOAT, false, VertexStride[format], &vPTC_324->col);
 		glVertexAttribPointer(vaTexCoord0, 2, GL_FLOAT, false, VertexStride[format], &vPTC_324->tc);
 		glVertexAttribPointer(vaCoord, 3, GL_FLOAT, false, VertexStride[format], &vPTC_324->pos);
@@ -260,7 +276,7 @@ void ShaderProgram::link() {
 	glValidateProgram(this->obj);
 	glGetProgramiv(this->obj, GL_VALIDATE_STATUS, &status);
 	if (status != GL_TRUE)
-		shaderCheck(this->obj, true);
+		shaderCheck(this->obj, true);	
 }
 
 void ShaderProgram::setUniform(UniformType type, int count, const void *value, const char *name, int &index) {
@@ -275,7 +291,7 @@ void ShaderProgram::setUniform(UniformType type, int count, const void *value, c
 		case utVec3	: glUniform3fv(index, count, (GLfloat*)value); break;
 		case utVec4	: glUniform4fv(index, count, (GLfloat*)value); break;
 		case utMat4	: glUniformMatrix4fv(index, count, false, (GLfloat*)value); break;
-		case utSampler: glUniform1iv(index, count, (GLint *)value); break;
+		case utSampler: glUniform1i(index, (GLint)value); break;
 	default :
 		return;
 	}
@@ -319,7 +335,7 @@ Texture::Texture() {
 	data = NULL;
 }
 
-Texture* Texture::init(int width, int height, TexFormat format, const void* data, int size) {
+Texture* Texture::init(int width, int height, TexFormat format, void* data, int size) {
 	struct FormatInfo {
 		int iformat, eformat, type;
 	} info[] = {
@@ -471,6 +487,7 @@ void Material::addTexture(const Texture *texture, const char *name, int sampler)
 	textures[sampler]->texture = (Texture *)texture;
 	textures[sampler]->uniformName = (char *)name;
 	textures[sampler]->shaderInternalIndex = -1;
+	shader->bind();
 	shader->setUniform(utSampler, 1, (const void *)sampler, name, textures[sampler]->shaderInternalIndex);	
 }
 
@@ -483,7 +500,8 @@ void Material::bind() {
 
 	Render::params.color = color;
 	for (int i = 0; i < MAX_SAMPLES; i++)
-		textures[i]->texture->bind(i);
+		if (textures[i])
+			textures[i]->texture->bind(i);
 	
 	shader->bind();
 }
@@ -522,7 +540,7 @@ void Render::init() {
 	GetProcOGL(glCompileShader);
 	GetProcOGL(glGetShaderInfoLog);
 	GetProcOGL(glGetUniformLocation);
-	GetProcOGL(glUniform1iv);
+	GetProcOGL(glUniform1i);
 	GetProcOGL(glUniform1fv);
 	GetProcOGL(glUniform2fv);
 	GetProcOGL(glUniform3fv);
@@ -558,10 +576,6 @@ void Render::resize(int width, int height) {
 }
 
 void Render::resetStates() {
-	glEnableVertexAttribArray(vaCoord);
-	glEnableVertexAttribArray(vaNormal);
-	glEnableVertexAttribArray(vaTexCoord0);
-
 	setCulling(CULL_NONE);
 	setCulling(CULL_BACK);
 	setBlending(BLEND_NONE);
@@ -574,7 +588,7 @@ void Render::resetStates() {
 		m_active_texture[i] = NULL_OBJ;
 	m_active_shader = NULL_OBJ;
 	m_vbuffer = NULL;
-	m_ibuffer = NULL;
+	m_ibuffer = NULL;	
 	setViewport(0, 0, width, height);
 }
 

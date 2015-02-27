@@ -140,7 +140,7 @@ Hash Stream::getHash(const char *name) {
     return hash;
 }
 
-Stream::Stream(Hash hash) : ptr(0), pos(0), size(0) {
+Stream::Stream(Hash hash) : ptr(0), pos(0), size(0), m_ownMemory(true) {
     for (int i = 0; i < packFilesCount; i++)
         if (packFiles[i].hash == hash) {
             PackFile &p = packFiles[i];
@@ -174,8 +174,30 @@ Stream::Stream(Hash hash) : ptr(0), pos(0), size(0) {
     LOG("Stream: file not found %u\n", hash);
 }
 
+Stream::Stream(const char *fileName) : ptr(NULL), size(0), pos(0), m_ownMemory(true) {
+	FILE *file = fopen(fileName, "rb");
+	if (!file) {
+		LOG("stream: file %s does not exist\n", fileName);
+		return;
+	}
+
+	fseek(file, 0L, SEEK_END);
+	size = ftell(file);
+	fseek(file, 0L, SEEK_SET);
+
+	ptr = new char[size];
+	if (fread(ptr, 1, size, file) != size) {
+		LOG("stream: file %s read failed\n", fileName);
+		delete[] ptr;
+		ptr = NULL;
+		size = 0;
+	}
+	fclose(file);
+}
+
 Stream::~Stream() {
-	delete ptr;
+	if (m_ownMemory)
+		delete[] ptr;
 }
 
 #define UA_GET32(p)			(*(unsigned int*)(p))

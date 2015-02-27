@@ -253,11 +253,12 @@ public:
 	ShaderProgram();
 	~ShaderProgram();
 	
+	// Set uniform and add it to internal storage, if needed
 	void setUniform(UniformType type, int count, const void *value, const char *name, int &index);	
 	void setUniform(ShaderParamInfo *info);
 	void bind();
 	void attach(void *data, ShaderType shaderType);
-	void link();
+	void link();	
 };
 
 enum TexWrap { wClamp, wRepeat, wClampToEdge, wClampToBorder, wMirrorRepeat, wMAX };
@@ -269,7 +270,7 @@ struct Texture {
 	int width, height;	
 	
 	
-	static Texture* init(int width, int height, TexFormat format, const void* data, int size = -1);
+	static Texture* init(int width, int height, TexFormat format, void* data, int size = -1);
 	static Texture* init(Stream *stream, TexExt ext, bool freeStreamOnFinish = true);
 	Texture();
 	~Texture();
@@ -344,7 +345,7 @@ protected:
     static TextureObj m_active_texture[MAX_SAMPLES];
     static ShaderObj m_active_shader;
 public:
-	static int statSetTex, statTriCount;
+	static int statSetTex, statTriCount, statDIPCount;
 	#ifdef S3D
 		static AS3::ui::flash::display::Stage stage;
 		static AS3::ui::flash::display::Stage3D stage3D;

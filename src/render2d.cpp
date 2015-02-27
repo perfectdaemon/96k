@@ -1,6 +1,14 @@
 #include "render2d.h"
 #include "resources.h"
 
+Sprite::Sprite(float width, float height, const vec2 &pivot) 
+	: m_width(width), m_height(height), m_pivot(pivot.x, pivot.y) { 
+	
+	resetVertices();  
+	resetTexCoords();
+	setVerticesColor(vec4(1.0f));
+}
+
 void Sprite::setRotation(float rotation) {
 	if (!_equalf(rotation, m_rot)) {
 		m_rot = rotation;
@@ -83,8 +91,8 @@ void SpriteBatch::end() {
 	if (m_count == 0)
 		return;
 
-	vb->update((void *)&m_vData[0], 0, m_count * 4);
-	ib->update((void *)&m_iData[0], 0, m_count * 6);
+	vb->update(&m_vData[0], 0, m_count * 4);
+	ib->update(&m_iData[0], 0, m_count * 6);
 	Render::params.mModelViewProj = Render::params.mViewProj;
 	Render::drawTriangles(ib, vb, 0, m_count * 6);
 }

@@ -78,6 +78,9 @@ void Core::update() {
 
 void Core::render() {
 	Render::resetStates();
+	Render::statDIPCount = 0;
+	Render::statSetTex = 0;
+	Render::statTriCount = 0;
     game->render();
 
 // fps meter
