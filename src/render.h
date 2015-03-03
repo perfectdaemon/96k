@@ -256,6 +256,10 @@ public:
 	// Set uniform and add it to internal storage, if needed
 	void setUniform(UniformType type, int count, const void *value, const char *name, int &index);	
 	void setUniform(ShaderParamInfo *info);
+	// Add uniform to internal storage
+	void addUniform(UniformType type, int count, const void *value, const char *name, int index = -1);	
+	void addUniform(const ShaderParamInfo *info);
+
 	void bind();
 	void attach(void *data, ShaderType shaderType);
 	void link();	
@@ -374,13 +378,16 @@ public:
 };
 
 enum ShaderParam {
-	spMatrixViewProj,
-	spMatrixModel,
-	spColor,	
+	spViewProj,
+	spModel,
+	spModelViewProj,	
+	spColor,		
 	SP_MAX
 };
 
 const ShaderParamInfo SHADER_PARAM_INFO[SP_MAX] = {
+	{utMat4, "uViewProj",      1, -1, &Render::params.mViewProj},
+	{utMat4, "uModel",		   1, -1, &Render::params.mModel},
 	{utMat4, "uModelViewProj", 1, -1, &Render::params.mModelViewProj},	
 	{utVec4, "uColor",		   1, -1, &Render::params.color},
 };

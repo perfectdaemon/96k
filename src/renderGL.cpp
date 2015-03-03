@@ -296,6 +296,14 @@ void ShaderProgram::setUniform(UniformType type, int count, const void *value, c
 		return;
 	}
 
+	
+}
+
+void ShaderProgram::setUniform(ShaderParamInfo *info) {
+	this->setUniform(info->type, info->count, info->ptr, info->name, info->cindex);
+}
+
+void ShaderProgram::addUniform(UniformType type, int count, const void *value, const char *name, int index) {
 	// Search for uniform in internal storage m_uniforms
 	for (int i = 0; i < m_uniforms.length(); i++) {		
 		const char *savedName = ((ShaderParamInfo *)m_uniforms.get(i))->name;
@@ -313,14 +321,13 @@ void ShaderProgram::setUniform(UniformType type, int count, const void *value, c
 	m_uniforms.push(info);
 }
 
-void ShaderProgram::setUniform(ShaderParamInfo *info) {
-	this->setUniform(info->type, info->count, info->ptr, info->name, info->cindex);
+void ShaderProgram::addUniform(const ShaderParamInfo *info) {
+	this->addUniform(info->type, info->count, info->ptr, info->name, info->cindex);
 }
 
 void ShaderProgram::setAllUniforms() {
-	for (int i = 0; i < m_uniforms.length(); i++) {
-		ShaderParamInfo *info = (ShaderParamInfo *) m_uniforms.get(i);
-		this->setUniform(info);
+	for (int i = 0; i < m_uniforms.length(); i++) {		
+		this->setUniform((ShaderParamInfo *) m_uniforms.get(i));
 	}
 }
 

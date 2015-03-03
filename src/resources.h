@@ -26,9 +26,6 @@ struct FontRes {
 	~FontRes();
 };
 
-char * loadText(Stream *stream);
-
-
 struct Default {
 public:
 	static bool isInited;

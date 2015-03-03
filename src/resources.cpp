@@ -35,11 +35,6 @@ FontRes::~FontRes() {
 
 }
 
-
-char * loadText(Stream *stream) {
-	return stream->getAnsi();
-}
-
 bool Default::isInited;
 ShaderProgram *Default::spriteShader;
 Texture *Default::blankTexture;
@@ -84,10 +79,8 @@ void Default::init() {
 	spriteShader->attach((void *) SHADER_SPRITE_FRAG, ShaderType::stFragment);
 	spriteShader->link();
 
-	// We don't need to store index
-	int index;	
-	spriteShader->setUniform(utMat4, 1, &Render::params.mModelViewProj, "uModelViewProj", index = -1);	
-	spriteShader->setUniform(utVec4, 1, &Render::params.color, "uColor", index = -1);
+	spriteShader->addUniform(&SHADER_PARAM_INFO[spModelViewProj]);
+	spriteShader->addUniform(&SHADER_PARAM_INFO[spColor]);	
 }
 
 void Default::deinit() {
