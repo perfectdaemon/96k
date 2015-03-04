@@ -337,12 +337,17 @@ void ShaderProgram::bind() {
 }
 
 // Texture ---------------------------------------------------
-Texture::Texture() {
-	glGenTextures(1, &obj);
-	data = NULL;
+
+void Texture::init(Texture *texture, Stream *stream, TexExt ext, bool freeStreamOnFinish) {
+	TextureRes *res = new TextureRes(stream, ext);
+	init(texture, res->width, res->height, res->format, res->data);
+	
+	delete res;
+	if (freeStreamOnFinish)
+		delete stream;	
 }
 
-Texture* Texture::init(int width, int height, TexFormat format, void* data, int size) {
+void Texture::init(Texture *texture, int width, int height, TexFormat format, void* data, int size) {
 	struct FormatInfo {
 		int iformat, eformat, type;
 	} info[] = {
@@ -361,13 +366,12 @@ Texture* Texture::init(int width, int height, TexFormat format, void* data, int 
 		{GL_COMPRESSED_RGBA_S3TC_DXT3,		GL_FALSE,			GL_FALSE},
 		{GL_COMPRESSED_RGBA_S3TC_DXT5,		GL_FALSE,			GL_FALSE},
 		{GL_ETC1_RGB8_OES,					GL_FALSE,			GL_FALSE},
-	};	
-	Texture *t = new Texture();	
-	t->width = width;
-	t->height = height;
-	t->data = (void *) data;
+	};		
+	texture->width = width;
+	texture->height = height;
+	texture->data = (void *) data;
 	
-	glBindTexture(GL_TEXTURE_2D, t->obj);
+	glBindTexture(GL_TEXTURE_2D, texture->obj);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -386,19 +390,23 @@ Texture* Texture::init(int width, int height, TexFormat format, void* data, int 
 		else
 			LOG("texture: compressed texture with no size is not allowed\n");
 	else
-		glTexImage2D(GL_TEXTURE_2D, 0, fmt.iformat, width, height, 0, fmt.eformat, fmt.type, data);	
+		glTexImage2D(GL_TEXTURE_2D, 0, fmt.iformat, width, height, 0, fmt.eformat, fmt.type, data);		
+}
 
+Texture::Texture() {
+	glGenTextures(1, &obj);
+	data = NULL;
+}
+
+Texture* Texture::init(int width, int height, TexFormat format, void *data, int size) {
+	Texture *t = new Texture();
+	init(t, width, height, format, data, size);
 	return t;
 }
 
 Texture* Texture::init(Stream *stream, TexExt ext, bool freeStreamOnFinish) {
-	TextureRes *res = new TextureRes(stream, ext);
-	Texture *t = Texture::init(res->width, res->height, res->format, res->data);
-	
-	delete res;
-	if (freeStreamOnFinish)
-		delete stream;
-
+	Texture *t = new Texture();
+	init(t, stream, ext, freeStreamOnFinish);
 	return t;
 }
 
@@ -426,11 +434,96 @@ TextureAtlas::TextureAtlas() {
 
 }
 
+char ** parseLine(const char *line, const char separator, int &count) {
+	int length = strlen(line);
+	count = 1;
+	for (int i = 0; i < length; i++)
+		if (line[i] == separator)
+			count++;
+
+	char **result = new char*[count];
+
+	int start = 0;
+	int j = 0;
+	for (int i = 0; i < length; i++) {
+		if (line[i] == separator) {
+
+			result[j] = new char[i - start + 1];
+			memcpy(result[j], &line[start], i - start);
+			result[j][i - start + 1] = 0;
+			start = i + 1;
+			j++;
+		}
+	}
+	result[j] = new char[length - start + 1];
+	memcpy(result[j], &line[start], length - start);
+	result[j][length - start + 1] = 0;
+
+	
+	return result;
+}
+
 TextureAtlas* TextureAtlas::init(Stream *imageStream, TexExt ext, 
 								 Stream *atlasStream, TextureAtlasExt extAtlas, 
-								 bool freeStreamOnFinish) {
-	LOG("TextureAtlas init is not implemented\n");
-	return NULL;
+								 bool freeStreamOnFinish) {	
+	
+	TextureAtlas *a = new TextureAtlas();
+	Texture::init(a, imageStream, ext, freeStreamOnFinish);
+	
+	if (extAtlas != TextureAtlasExt::extCheetah) {
+		LOG("TextureAtlas: init failed, extAtlas is not extCheetah\n");
+		if (freeStreamOnFinish)
+			delete atlasStream;
+		return a;
+	}
+
+	char *text = atlasStream->getAnsi();
+	int linesCount = 0;
+	char **lines = parseLine(text, '\n', linesCount);
+	delete text;
+
+	// First line is texture name, others - regions
+	// So, if there is less then 2 lines - it's wrong file
+	if (linesCount < 2) {
+		LOG("TextureAtlas: init failed, lines count is %d\n", linesCount);
+		if (freeStreamOnFinish)
+			delete atlasStream;
+		return a;
+	}
+
+	// We don't need an texture name
+	delete lines[0];
+
+	for (int i = 1; i < linesCount; i++) {
+		int columnCount = 0;
+		char **columns = parseLine(lines[i], '\t', columnCount);
+		if (columnCount <= 0) {
+			LOG("TextureAtlas: can not parse line %d\n", i);
+			continue;
+		}
+
+		TextureRegion *r = new TextureRegion();
+		strcpy(r->name, columns[0]);
+		r->texture = a;
+		r->tx = atoi(columns[1]) / (float)a->width;
+		r->ty = atoi(columns[2]) / (float)a->height;
+		r->tw = atoi(columns[3]) / (float)a->width;
+		r->th = atoi(columns[4]) / (float)a->height;
+		r->rotated = (columnCount > 9) && (columns[9][0] == 'r');
+
+		a->m_regions.push(r);
+
+		for (int j = 0; j < columnCount; delete columns[j++]);
+		delete [] columns;
+		
+		delete lines[i];
+	}
+
+	delete [] lines;	
+	
+	if (freeStreamOnFinish)
+		delete atlasStream;
+	return a;
 }
 
 TextureAtlas::~TextureAtlas() {

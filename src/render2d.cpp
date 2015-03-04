@@ -141,3 +141,130 @@ Font* Font::init(Stream *stream, bool freeStreamOnFinish) {
 
 	return f;
 }
+
+Quad_PTC_324 Font::getCharQuad(char c, float scale) {
+	Quad_PTC_324 q;
+	memset(&q, 0, sizeof(Quad_PTC_324));
+	CharData *cd = table[c];
+	if (!cd)
+		return q;	
+	
+	q.v[0].pos = vec3(cd->w, cd->py + cd->h, 0) * scale;
+	q.v[1].pos = vec3(cd->w, cd->py,		 0) * scale;
+	q.v[2].pos = vec3(0,	 cd->py,		 0) * scale;
+	q.v[3].pos = vec3(0,	 cd->py + cd->h, 0) * scale;
+
+	q.v[0].tc = vec2(cd->tx + cd->tw, cd->ty + cd->th);
+	q.v[1].tc = vec2(cd->tx + cd->tw, cd->ty		 );
+	q.v[2].tc = vec2(cd->tx,		  cd->ty		 );
+	q.v[3].tc = vec2(cd->tx,		  cd->ty + cd->th);
+}
+
+
+// FontBatch ---------------------------------------------------
+
+vec2 FontBatch::getTextOrigin(const Text *text) {
+	float maxWidth = 0.0f;
+	vec2 textSize(0.0f, m_font->maxCharHeight + text->lineSpacing);
+
+	for (int i = 0; i < text->text.length(); i++) {
+		CharData *c = m_font->table[text->text[i]];
+		
+		if (c->id == '\n') {
+			textSize.y += m_font->maxCharHeight + text->lineSpacing;
+			if (maxWidth > textSize.x)
+				textSize.x = maxWidth;
+			maxWidth = 0.0f;
+			continue;
+		}
+
+		maxWidth += c->w + text->letterSpacing;
+	}
+	if (textSize.x < maxWidth)
+		textSize.x = maxWidth;
+
+	textSize *= text->scale;
+
+	return -textSize * text->pivot;
+}
+
+void FontBatch::wordWrapText(Text *text) {
+	int lastSpace = 0;
+	float width = 0.0f;
+	int i = 0;
+	while (i < text->text.length()) {
+		if (!m_font->table[text->text[i]])
+			continue;
+		
+		if (text->text[i] == '\n')
+			text->text[i] = ' ';
+
+		if (text->text[i] == ' ')
+			lastSpace = i;
+
+		width += m_font->table[text->text[i]]->w * text->scale + text->letterSpacing;
+		if (width > text->textWidth() && lastSpace > 0) {
+			text->text[lastSpace] = '\n';
+			i = lastSpace + 1;
+			width = 0.0f;
+			lastSpace = 0;
+		}
+		else
+			i++;
+	}
+}
+
+void FontBatch::begin() {
+	m_count = 0;
+}
+
+void FontBatch::end() {
+	if (m_count == 0)
+		return;
+
+	vb->update(&m_vData[0], 0, m_count * 4);
+	ib->update(&m_iData[0], 0, m_count * 6);
+	Render::params.mModelViewProj = Render::params.mViewProj;
+	Render::drawTriangles(ib, vb, 0, m_count * 6);
+}
+
+void FontBatch::render(Text *text) {
+	static const unsigned int spriteIndices[6] = { 0, 1, 2, 2, 3, 0 };
+
+	if (!text->visible() || text->text == "")
+		return;
+
+	vec2 origin = getTextOrigin(text);
+	vec2 start = origin;
+
+	if (text->textWidth() > 0.0f && text->textWidthChanged) {
+		wordWrapText(text);
+		text->textWidthChanged = false;
+	}
+
+	for (int i = 0; i < text->text.length(); i++) {		
+		if (text->text[i] == '\n') {
+			start.x = origin.x;
+			start.y += (text->lineSpacing + m_font->maxCharHeight) * text->scale;
+			continue;
+		}
+
+		if (!m_font->table[text->text[i]])
+			continue;
+
+		Quad_PTC_324 quad = m_font->getCharQuad(text->text[i], text->scale);
+		mat4 absMatrix = text->absMatrix();
+		for (int j = 0; j < 4; j++) {
+			m_vData[m_count * 4 + j] = quad.v[j];
+			m_vData[m_count * 4 + j].pos += vec3(start.x, start.y, 0);
+			m_vData[m_count * 4 + j].pos = absMatrix * m_vData[m_count * 4 + j].pos;
+			m_vData[m_count * 4 + j].col = text->color;
+		}
+
+		for (int j = 0; j < 6; j++)
+			m_iData[m_count * 6 + j] = spriteIndices[j] + m_count * 4;
+
+		start.x = quad.v[0].pos.x + text->letterSpacing;
+		m_count++;
+	}		
+}

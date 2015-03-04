@@ -17,7 +17,7 @@ public:
 	vec3 position;
 
 	Node();
-	~Node() { }
+	virtual ~Node() { }
 
 	virtual Node * parent() { return m_parent; }
 	virtual void setParent(const Node* node) { m_parent = (Node *)node; }
@@ -54,8 +54,8 @@ public:
 	Camera();
 	~Camera() { }
 	
-	virtual void setProjParams(int x, int y, int w, int h);
-	virtual void setProjParams(int x, int y, int w, int h, 
+	void setProjParams(int x, int y, int w, int h);
+	void setProjParams(int x, int y, int w, int h, 
 		float FOV, float zNear, float zFar, 
 		CameraProjectionMode projMode,
 		CameraPivotMode pivotMode);
@@ -72,7 +72,7 @@ public:
 
 	void update();
 
-	void render() { }
+	void render() override { }
 };
 
 #endif // SCENE_H
