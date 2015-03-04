@@ -192,11 +192,14 @@ struct Vertex_PN_34 {
 	unsigned char n[4];
 };
 
-struct Vertex_PTC_324
-{
+struct Vertex_PTC_324 {
 	vec3 pos;
 	vec2 tc;
 	vec4 col;
+};
+
+struct Quad_PTC_324 {
+	Vertex_PTC_324 v[4];
 };
 
 const int VertexStride[VF_MAX] = {
@@ -269,6 +272,10 @@ enum TexWrap { wClamp, wRepeat, wClampToEdge, wClampToBorder, wMirrorRepeat, wMA
 enum TexExt { extBmp, extTga };
 
 struct Texture {
+protected:
+	static void init(Texture *texture, Stream *stream, TexExt ext, bool freeStreamOnFinish = true);
+	static void init(Texture *texture, int width, int height, TexFormat format, void* data, int size = -1);
+public:
 	TextureObj obj;
 	void *data;
 	int width, height;	
@@ -277,7 +284,7 @@ struct Texture {
 	static Texture* init(int width, int height, TexFormat format, void* data, int size = -1);
 	static Texture* init(Stream *stream, TexExt ext, bool freeStreamOnFinish = true);
 	Texture();
-	~Texture();
+	virtual ~Texture();
 
 	void setWrap(TexWrap wrap);
 
