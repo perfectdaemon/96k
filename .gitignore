@@ -8,3 +8,6 @@
 
 *.suo
 *.opensdf
+/bin/Debug
+/bin/XRT
+/bin/Release
