@@ -434,7 +434,7 @@ TextureAtlas::TextureAtlas() {
 
 }
 
-char ** TextureAtlas::parseLine(const char *line, const char separator, int &count) {
+char ** parseLine(const char *line, const char separator, int &count) {
 	int length = strlen(line);
 	count = 1;
 	for (int i = 0; i < length; i++)
@@ -450,14 +450,14 @@ char ** TextureAtlas::parseLine(const char *line, const char separator, int &cou
 
 			result[j] = new char[i - start + 1];
 			memcpy(result[j], &line[start], i - start);
-			result[j][i - start + 1] = '\0';
+			result[j][i - start] = '\0';
 			start = i + 1;
 			j++;
 		}
 	}
 	result[j] = new char[length - start + 1];
 	memcpy(result[j], &line[start], length - start);
-	result[j][length - start + 1] = '\0';
+	result[j][length - start] = '\0';
 	
 	return result;
 }
@@ -498,7 +498,7 @@ TextureAtlas* TextureAtlas::init(Stream *imageStream, TexExt ext,
 	for (int i = 1; i < linesCount; i++) {
 		int columnCount = 0;
 		char **columns = parseLine(lines[i], '\t', columnCount);
-		if (columnCount <= 0) {
+		if (columnCount < 9) {
 			LOG("TextureAtlas: can not parse line %d\n", i);
 			continue;
 		}
