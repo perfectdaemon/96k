@@ -3,15 +3,20 @@
 
 #include "utils.h"
 #include "render.h"
+#include "render2d.h"
 
 struct TextureRes {
 private:
 	void loadFromBmp(Stream *stream);
 	void loadFromTga(Stream *stream);
+	void loadUncompressedTga(Stream *stream, int bytesPP);
+	void loadRleCompressedTga(Stream *stream, int bytesPP);
+
+	void copySwapedPixelData(const unsigned char *src, char *dst);
 public:
 	TexFormat format;
-	void *data;
-	int width, height;	
+	char *data;
+	int width, height, size;	
 
 	TextureRes(Stream *stream, TexExt ext);
 	~TextureRes();
@@ -19,7 +24,7 @@ public:
 
 struct FontRes {
 	TextureRes *texture;
-	void *data;
+	CharData *data;
 	int charCount;
 
 	FontRes(Stream *stream);

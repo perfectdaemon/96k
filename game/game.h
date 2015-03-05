@@ -26,6 +26,8 @@ struct Game {
 
 	Camera *camera;
 
+	Texture *tex;
+	TextureAtlas *atl;
 	Material *mat;
     Game();
     ~Game();

@@ -340,7 +340,7 @@ void ShaderProgram::bind() {
 
 void Texture::init(Texture *texture, Stream *stream, TexExt ext, bool freeStreamOnFinish) {
 	TextureRes *res = new TextureRes(stream, ext);
-	init(texture, res->width, res->height, res->format, res->data);
+	init(texture, res->width, res->height, res->format, res->data, res->size);
 	
 	delete res;
 	if (freeStreamOnFinish)
@@ -434,7 +434,7 @@ TextureAtlas::TextureAtlas() {
 
 }
 
-char ** parseLine(const char *line, const char separator, int &count) {
+char ** TextureAtlas::parseLine(const char *line, const char separator, int &count) {
 	int length = strlen(line);
 	count = 1;
 	for (int i = 0; i < length; i++)
@@ -450,15 +450,14 @@ char ** parseLine(const char *line, const char separator, int &count) {
 
 			result[j] = new char[i - start + 1];
 			memcpy(result[j], &line[start], i - start);
-			result[j][i - start + 1] = 0;
+			result[j][i - start + 1] = '\0';
 			start = i + 1;
 			j++;
 		}
 	}
 	result[j] = new char[length - start + 1];
 	memcpy(result[j], &line[start], length - start);
-	result[j][length - start + 1] = 0;
-
+	result[j][length - start + 1] = '\0';
 	
 	return result;
 }
@@ -477,7 +476,9 @@ TextureAtlas* TextureAtlas::init(Stream *imageStream, TexExt ext,
 		return a;
 	}
 
-	char *text = atlasStream->getAnsi();
+	char *text = new char[atlasStream->size + 1]; 
+	memcpy(text, atlasStream->getData(atlasStream->size), atlasStream->size);
+	text[atlasStream->size] = '\0';
 	int linesCount = 0;
 	char **lines = parseLine(text, '\n', linesCount);
 	delete text;
@@ -492,7 +493,7 @@ TextureAtlas* TextureAtlas::init(Stream *imageStream, TexExt ext,
 	}
 
 	// We don't need an texture name
-	delete lines[0];
+	delete [] lines[0];
 
 	for (int i = 1; i < linesCount; i++) {
 		int columnCount = 0;
@@ -503,6 +504,7 @@ TextureAtlas* TextureAtlas::init(Stream *imageStream, TexExt ext,
 		}
 
 		TextureRegion *r = new TextureRegion();
+		r->name = new char[strlen(columns[0])];
 		strcpy(r->name, columns[0]);
 		r->texture = a;
 		r->tx = atoi(columns[1]) / (float)a->width;
@@ -513,10 +515,12 @@ TextureAtlas* TextureAtlas::init(Stream *imageStream, TexExt ext,
 
 		a->m_regions.push(r);
 
-		for (int j = 0; j < columnCount; delete columns[j++]);
+		for (int j = 0; j < columnCount; delete [] columns[j++])
+			;
+		
 		delete [] columns;
 		
-		delete lines[i];
+		delete [] lines[i];
 	}
 
 	delete [] lines;	
