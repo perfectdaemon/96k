@@ -58,6 +58,8 @@ static int _clamp(int x, int a, int b) { return x < a ? a : (x > b ? b : x); }
 
 typedef unsigned int Hash;
 
+typedef unsigned char uchar;
+
 struct PackFile {
 	Hash hash;
 	int offset, size, csize;
@@ -86,15 +88,16 @@ public:
 	Stream(int _size) : ptr(new char[_size]), size(_size), pos(0), m_ownMemory(true) { }
 	Stream(const char *fileName);
 	~Stream();
-	bool    eof() { return pos >= size; }
-	int     seek(int offset) { pos += offset; return pos; }
-	char*	getData(int count)	{ char *r = &ptr[pos]; pos += count; return r; }
-	void	getCopy(void* data, int count)	{ memcpy(data, getData(count), count); }
-	char	getChar()	{ char r = ptr[pos]; pos += 1; return r; };
-	short	getShort()	{ short r = ((short*)&ptr[pos])[0]; pos += 2; return r; };
-	int		getInt()	{ int r = ((int*)&ptr[pos])[0]; pos += 4; return r; };
-	float	getFloat()	{ float r = ((float*)&ptr[pos])[0]; pos += 4; return r; };
-	char*	getAnsi()	{ int len = getShort(); char *res = new char[len + 1]; memcpy(res, getData(len), len); res[len] = 0; return res; }
+	bool		 eof() { return pos >= size; }
+	int			 seek(int offset) { pos += offset; return pos; }
+	char*		 getData(int count)	{ char *r = &ptr[pos]; pos += count; return r; }
+	void		 getCopy(void* data, int count)	{ memcpy(data, getData(count), count); }
+	char		 getChar()	{ char r = ptr[pos]; pos += 1; return r; };
+	short		 getShort()	{ short r = ((short*)&ptr[pos])[0]; pos += 2; return r; };
+	int			 getInt()	{ int r = ((int*)&ptr[pos])[0]; pos += 4; return r; };
+	unsigned int getUInt()  { unsigned int r = ((unsigned int *)&ptr[pos])[0]; pos += 4; return r; }
+	float		 getFloat()	{ float r = ((float*)&ptr[pos])[0]; pos += 4; return r; };
+	char*		 getAnsi()	{ int len = getShort(); char *res = new char[len + 1]; memcpy(res, getData(len), len); res[len] = 0; return res; }
 };
 
 struct vec2 {
@@ -664,7 +667,8 @@ struct String {
 	char *data;
 
 	String(const char *str = 0) : data(String::copy(str)) {}
-	~String() { delete data; }
+	String(const String &string) : data(String::copy(string.data)) {}
+	~String() { delete [] data; }
 
 	bool operator == (const char *str) const { 
 		return String::cmp(data, str) == 0;
@@ -678,6 +682,12 @@ struct String {
 		if (d2) memcpy(&res[d1], str, d2);
 		res[d1 + d2] = 0;
 		return String(res);
+	}
+
+	String& operator = (String &s) { 
+		if (data) 
+			delete data; 
+		data = String::copy(s.data);
 	}
 
 	static char* copy(const char *str) {
@@ -697,12 +707,115 @@ struct String {
 	static int length(const char *str) {
 		return str ? strlen(str) : 0;
 	}
-
+	
 	static void replace(char *str, char src, char dst) {
 		int len = length(str);
 		for (int i = 0; i < len; i++)
 			if (str[i] == src)
 				str[i] = dst;
+	}
+};
+
+#define SHORT_STRING_SIZE 256
+struct ShortString {
+	char data[SHORT_STRING_SIZE];
+	char *ptr;
+
+	ShortString(const char *string = 0) : ptr(&data[0]) {
+		if (!string)
+			memset(ptr, 0, SHORT_STRING_SIZE);
+		else
+			ShortString::copy(ptr, string);
+	}
+
+	bool operator == (const ShortString &a) const { return !ShortString::cmp(this->data, a.data); }
+	bool operator != (const ShortString &a) const { return !(*this == a); }
+
+	ShortString operator + (const char *string) const {
+		ShortString s(this->data);
+		
+		int len1 = ShortString::length(this->data);
+		int len2 = ShortString::length(string);
+		if (len2 == 0)
+			return s;
+		
+		int maxlen = SHORT_STRING_SIZE - 1 - len1;
+		if (maxlen > 0) 
+			memcpy((s.data + len1), string, maxlen);					
+		 
+		return s;
+	}
+	ShortString& operator = (ShortString &a) {
+		ShortString::copy(ptr, a.data);
+		return *this;
+	}
+
+	ShortString& operator = (const char *string) {
+		ShortString::copy(ptr, string);
+		return *this;
+	}
+
+	char& operator [] (int index) {
+		if (index < length() && index >= 0) 
+			return data[index];
+		else {
+			LOG("ShortString: error, attempt to read/write wrong index %d\n", index);
+			return data[length() - 1];
+		}
+	}
+
+	char operator [] (int index) const {
+		if (index < length() && index >= 0) 
+			return (data[index]);
+		else {
+			LOG("ShortString: error, attempt to read wrong index %d\n", index);
+			return 0;
+		}
+	}	
+
+	int length() const {
+		return ShortString::length(this->data);
+	}
+
+	ShortString& replace(char src, char dst) {
+		ShortString::replace(this->data, src, dst);
+		return *this;
+	}
+
+private:
+	static int cmp(const char *str1, const char *str2) {
+		return (str1 == 0 && str2 == 0) ? 0 : (str1 == 0 ? -1 : (str2 == 0 ? 1 : strcmp(str1, str2)));
+	}
+
+	static int length(const char *str) {
+		return str ? strlen(str) : 0;
+	}
+	
+	static void replace(char *str, char src, char dst) {
+		int len = length(str);
+		for (int i = 0; i < len; i++)
+			if (str[i] == src)
+				str[i] = dst;
+	}
+
+	/*
+	static char* copy(const char *str) {
+		if (!str)
+			return 0;
+		int length = strlen(str);
+		char *res = new char[length + 1];
+		memcpy(res, str, length);
+		res[length] = 0;
+		return res;
+	}
+	*/
+	static void copy (char *dst, const char *src) {
+		if (!src)
+			return;
+		memset(dst, 0, SHORT_STRING_SIZE);
+		int len = min(strlen(src), SHORT_STRING_SIZE - 1);		
+		memcpy(dst, src, len);
+		//dst[len] = '\0';
 	}
 };
 

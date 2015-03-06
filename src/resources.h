@@ -9,26 +9,27 @@ struct TextureRes {
 private:
 	void loadFromBmp(Stream *stream);
 	void loadFromTga(Stream *stream);
-	void loadUncompressedTga(Stream *stream, int bytesPP);
-	void loadRleCompressedTga(Stream *stream, int bytesPP);
+	void loadUncompressedTga(Stream *stream);
+	void loadRleCompressedTga(Stream *stream);
 
-	void copySwapedPixelData(const unsigned char *src, char *dst);
+	void flipImage();
+	static void copySwapedPixelData(const unsigned char *src, char *dst);
 public:
 	TexFormat format;
 	char *data;
-	int width, height, size;	
+	int width, height, size, bytesPP;	
 
 	TextureRes(Stream *stream, TexExt ext);
-	~TextureRes();
+	~TextureRes() { delete [] data; }
 };
 
 struct FontRes {
 	TextureRes *texture;
 	CharData *data;
-	int charCount;
+	unsigned int charCount;
 
 	FontRes(Stream *stream);
-	~FontRes();
+	~FontRes() { delete [] data; delete texture; }
 };
 
 struct Default {

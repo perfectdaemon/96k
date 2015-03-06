@@ -17,7 +17,7 @@
 #include "render2d.h"
 #include "scene.h"
 
-#define SPRITE_COUNT 5
+#define SPRITE_COUNT 1
 
 struct Game {	
 	
@@ -25,10 +25,14 @@ struct Game {
 	Sprite *sprites[SPRITE_COUNT];
 
 	Camera *camera;
-
-	Texture *tex;
+	
 	TextureAtlas *atl;
 	Material *mat;
+
+	Font *font;
+	FontBatch *fbatch;
+	Text *text1;
+
     Game();
     ~Game();
     void pause();

@@ -311,7 +311,7 @@ void ShaderProgram::addUniform(UniformType type, int count, const void *value, c
 			return;
 	}
 	
-	//if failed then add new
+	// if failed then add new
 	ShaderParamInfo *info = new ShaderParamInfo();
 	info->cindex = index;
 	info->count = count;
@@ -369,7 +369,8 @@ void Texture::init(Texture *texture, int width, int height, TexFormat format, vo
 	};		
 	texture->width = width;
 	texture->height = height;
-	texture->data = (void *) data;
+	texture->data = malloc(size);
+	memcpy(texture->data, data, size);	
 	
 	glBindTexture(GL_TEXTURE_2D, texture->obj);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

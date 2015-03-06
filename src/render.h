@@ -274,14 +274,14 @@ enum TexExt { extBmp, extTga };
 struct Texture {
 protected:
 	static void init(Texture *texture, Stream *stream, TexExt ext, bool freeStreamOnFinish = true);
-	static void init(Texture *texture, int width, int height, TexFormat format, void* data, int size = -1);
+	static void init(Texture *texture, int width, int height, TexFormat format, void* data, int size);
 public:
 	TextureObj obj;
 	void *data;
 	int width, height;	
 	
 	
-	static Texture* init(int width, int height, TexFormat format, void* data, int size = -1);
+	static Texture* init(int width, int height, TexFormat format, void* data, int size);
 	static Texture* init(Stream *stream, TexExt ext, bool freeStreamOnFinish = true);
 	Texture();
 	virtual ~Texture();

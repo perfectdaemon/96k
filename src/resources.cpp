@@ -16,7 +16,7 @@ void TextureRes::loadFromBmp(Stream *stream) {
 
 	// if height is negative then bitmap is upside down
 	int absHeight = abs(height);
-	int bytesPP = infoHeader->biBitCount / 8;	
+	bytesPP = infoHeader->biBitCount / 8;	
 	switch (bytesPP) {
 		case 3: format = TexFormat::TEX_BGR8; break;
 		case 4: format = TexFormat::TEX_BGRA8; break;
@@ -37,27 +37,9 @@ void TextureRes::loadFromBmp(Stream *stream) {
 		pos += sLength;
 	}
 	
-	// flip surface
-	if (height > 0) {
-		int lineSize = bytesPP * width;
-		int sliceSize = lineSize * height;
-		char *tmpBuf = new char[lineSize];
-
-		char *top = data;
-		char *bottom = data;
-		bottom += sliceSize - lineSize;
-
-		for (int i = 0; i < (height / 2); i++) {
-			// swap lines
-			memcpy(tmpBuf, top,    lineSize);
-			memcpy(top,    bottom, lineSize);
-			memcpy(bottom, tmpBuf, lineSize);
-
-			top    += lineSize;
-			bottom -= lineSize;
-		}
-		delete [] tmpBuf;
-	}
+	// flip surface if needed
+	if (height > 0) 
+		flipImage();	
 	else
 		height = -height;
 }
@@ -97,7 +79,7 @@ void TextureRes::loadFromTga(Stream *stream) {
 		return;
 	}
 
-	int bytesPP = colorDepth / 8;
+	bytesPP = colorDepth / 8;
 
 	switch (bytesPP) {
 		case 3: format = TexFormat::TEX_RGB8; break;
@@ -109,18 +91,21 @@ void TextureRes::loadFromTga(Stream *stream) {
 
 	switch (header->ImageType) {
 		case 2: 
-			loadUncompressedTga(stream, bytesPP);
+			loadUncompressedTga(stream);
 			break;
 		case 10: 
-			loadRleCompressedTga(stream, bytesPP);
+			loadRleCompressedTga(stream);
 			break;
 		default:
 			LOG("TGA load: uncompressed and RLE-compressed files are only supported\n");
 			return;
 	}
+
+	// flip
+	flipImage();
 }
 
-void TextureRes::loadUncompressedTga(Stream *stream, int bytesPP) {
+void TextureRes::loadUncompressedTga(Stream *stream) {
 	memcpy(data, stream->getData(size), size);	
 	
 	// flip bgr(a) to rgb(a)
@@ -140,7 +125,28 @@ void TextureRes::copySwapedPixelData(const unsigned char *src, char *dst) {
 	dst[3] = src[3];
 }
 
-void TextureRes::loadRleCompressedTga(Stream *stream, int bytesPP) {
+void TextureRes::flipImage() {
+	int lineSize = bytesPP * width;
+	int sliceSize = lineSize * height;
+	char *tmpBuf = new char[lineSize];
+
+	char *top = data;
+	char *bottom = data;
+	bottom += sliceSize - lineSize;
+
+	for (int i = 0; i < (height / 2); i++) {
+		// swap lines
+		memcpy(tmpBuf, top,    lineSize);
+		memcpy(top,    bottom, lineSize);
+		memcpy(bottom, tmpBuf, lineSize);
+
+		top    += lineSize;
+		bottom -= lineSize;
+	}
+	delete [] tmpBuf;
+}
+
+void TextureRes::loadRleCompressedTga(Stream *stream) {
 	int currentByte = 0;
 	int currentPixel = 0;
 	int bufferIndex = 0;
@@ -187,20 +193,30 @@ TextureRes::TextureRes(Stream *stream, TexExt ext) {
 	}
 }
 
-TextureRes::~TextureRes() {
+// FontRes ----------------------------------------------------
+FontRes::FontRes(Stream *stream) : texture(NULL), charCount(0), data(NULL) {	
+	// load texture
+	this->texture = new TextureRes(stream, TexExt::extBmp);
+	
+	// make sure that it is a font file - check magic var
+	stream->pos = 0;
+	BITMAPFILEHEADER *fileHeader = (BITMAPFILEHEADER *) stream->getData(sizeof(BITMAPFILEHEADER));
+	BITMAPINFOHEADER *infoHeader = (BITMAPINFOHEADER *) stream->getData(sizeof(BITMAPINFOHEADER));
+	if (fileHeader->bfReserved1 != 0x0f86) {
+		LOG("Font load: failed, reserved word is incorrect\n");
+		return;
+	}
+
+	// ok, let's read font data
+	stream->pos = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + infoHeader->biSizeImage;
+
+	this->charCount = stream->getUInt();
+	this->data = new CharData[charCount];
+
+	memcpy(data, stream->getData(sizeof(CharData) * charCount), sizeof(CharData) * charCount);
 }
 
-
-
-
-FontRes::FontRes(Stream *stream) {
-
-}
-
-FontRes::~FontRes() {
-
-}
-
+// Default ----------------------------------------------
 bool Default::isInited;
 ShaderProgram *Default::spriteShader;
 Texture *Default::blankTexture;
@@ -238,7 +254,7 @@ void Default::init() {
 	
 	char *data = new char[3];
 	memset(data, 0xFF, 3);
-	blankTexture = Texture::init(1, 1, TexFormat::TEX_RGB8, (void *) data);	
+	blankTexture = Texture::init(1, 1, TexFormat::TEX_RGB8, (void *) data, 3);	
 
 	spriteShader = new ShaderProgram();
 	spriteShader->attach((void *) SHADER_SPRITE_VERT, ShaderType::stVertex);

@@ -3,9 +3,9 @@
 
 #include "render.h"
 #include "scene.h"
-#include <string>
+//#include <string>
 
-using namespace std;
+//using namespace std;
 
 struct Sprite : public Node {
 protected:
@@ -15,7 +15,7 @@ public:
 	Vertex_PTC_324 vertices[4];
 
 	Sprite(float width, float height, const vec2 &pivot);
-	Sprite() :m_width(1.0f), m_height(1.0f), m_pivot(0.5f, 0.5f) {}
+	Sprite() :m_width(1.0f), m_height(1.0f), m_pivot(0.5f, 0.5f), m_rot(0) {}
 	~Sprite() {}
 
 	virtual float width() { return m_width; }
@@ -62,10 +62,11 @@ public:
 };
 
 struct CharData {
-		unsigned char id;
-		unsigned int py, w, h;
-		float tx, ty, tw, th;
-	};
+	float tx, ty, tw, th;
+	unsigned short py, w, h;
+	unsigned char id;
+	char _pad;
+};
 
 struct Font {
 private:
@@ -79,19 +80,18 @@ public:
 
 	Font() : maxCharHeight(0), m_charCount(0), charData(NULL), texture(NULL), material(NULL) { }
 	~Font() { 
-		free(charData); 
+		delete [] charData;
 		delete texture;
 		delete material;
 	}
 
 	static Font* init(Stream *stream, bool freeStreamOnFinish = true);
 
-	Quad_PTC_324 getCharQuad(char c, float scale);
+	Quad_PTC_324 getCharQuad(uchar c, float scale);
 };
 
 struct Text : public Node {
-private:
-	
+private:	
 	float m_textWidth;	
 public:
 	Text() :
@@ -106,7 +106,7 @@ public:
 		}
 	~Text() {}
 
-	string text;
+	ShortString text;
 
 	float letterSpacing, lineSpacing;
 	vec4 color;

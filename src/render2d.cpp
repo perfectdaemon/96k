@@ -2,7 +2,7 @@
 #include "resources.h"
 
 Sprite::Sprite(float width, float height, const vec2 &pivot) 
-	: m_width(width), m_height(height), m_pivot(pivot.x, pivot.y) { 
+	: m_width(width), m_height(height), m_pivot(pivot.x, pivot.y), m_rot(0) { 
 	
 	resetVertices();  
 	resetTexCoords();
@@ -69,7 +69,7 @@ void Sprite::setTextureRegion(TextureRegion *region, bool adjustSpriteSize) {
 		vertices[2].tc = vec2(region->tx,			   region->ty);
 		vertices[3].tc = vec2(region->tx,              region->ty + region->th);
 		if (adjustSpriteSize)
-			setSize(region->tw * region->texture->width, region->th * region->texture->height);
+			setSize((region->tw) * (region->texture->width), (region->th) * (region->texture->height));
 	}
 	else {
 		vertices[0].tc = vec2(region->tx,              region->ty + region->th);
@@ -117,16 +117,18 @@ void SpriteBatch::render(Sprite *sprite) {
 // Font ------------------------------------------------------
 
 Font* Font::init(Stream *stream, bool freeStreamOnFinish) {
-	Font *f = new Font();	
-	f->material = Material::init(Default::isInited ? Default::spriteShader : NULL);
+	Font *f = new Font();		
 	
 	FontRes *fRes = new FontRes(stream);
 	TextureRes *tRes = fRes->texture;
 
-	f->texture = Texture::init(tRes->width, tRes->height, tRes->format, tRes->data);
+	f->texture = Texture::init(tRes->width, tRes->height, tRes->format, tRes->data, tRes->size);
+	f->material = Material::init(Default::isInited ? Default::spriteShader : NULL);
+	f->material->addTexture(f->texture, "uDiffuse", 0);
 
-	f->charData = (CharData *)fRes->data;
 	f->m_charCount = fRes->charCount;
+	f->charData = new CharData[f->m_charCount];
+	memcpy(f->charData, fRes->data, sizeof(CharData) * f->m_charCount);
 
 	for (int i = 0; i < f->m_charCount; i++) {
 		f->table[f->charData[i].id] = &f->charData[i];
@@ -142,7 +144,7 @@ Font* Font::init(Stream *stream, bool freeStreamOnFinish) {
 	return f;
 }
 
-Quad_PTC_324 Font::getCharQuad(char c, float scale) {
+Quad_PTC_324 Font::getCharQuad(uchar c, float scale) {
 	Quad_PTC_324 q;
 	memset(&q, 0, sizeof(Quad_PTC_324));
 	CharData *cd = table[c];
@@ -158,6 +160,8 @@ Quad_PTC_324 Font::getCharQuad(char c, float scale) {
 	q.v[1].tc = vec2(cd->tx + cd->tw, cd->ty		 );
 	q.v[2].tc = vec2(cd->tx,		  cd->ty		 );
 	q.v[3].tc = vec2(cd->tx,		  cd->ty + cd->th);
+
+	return q;
 }
 
 
@@ -168,7 +172,8 @@ vec2 FontBatch::getTextOrigin(const Text *text) {
 	vec2 textSize(0.0f, m_font->maxCharHeight + text->lineSpacing);
 
 	for (int i = 0; i < text->text.length(); i++) {
-		CharData *c = m_font->table[text->text[i]];
+		unsigned char ch = text->text[i];
+		CharData *c = m_font->table[ch];
 		
 		if (c->id == '\n') {
 			textSize.y += m_font->maxCharHeight + text->lineSpacing;
@@ -225,6 +230,7 @@ void FontBatch::end() {
 	vb->update(&m_vData[0], 0, m_count * 4);
 	ib->update(&m_iData[0], 0, m_count * 6);
 	Render::params.mModelViewProj = Render::params.mViewProj;
+	this->m_font->material->bind();
 	Render::drawTriangles(ib, vb, 0, m_count * 6);
 }
 
@@ -243,16 +249,17 @@ void FontBatch::render(Text *text) {
 	}
 
 	for (int i = 0; i < text->text.length(); i++) {		
-		if (text->text[i] == '\n') {
+		uchar c = text->text[i];
+		if (c == '\n') {
 			start.x = origin.x;
 			start.y += (text->lineSpacing + m_font->maxCharHeight) * text->scale;
 			continue;
 		}
 
-		if (!m_font->table[text->text[i]])
+		if (!m_font->table[c])
 			continue;
 
-		Quad_PTC_324 quad = m_font->getCharQuad(text->text[i], text->scale);
+		Quad_PTC_324 quad = m_font->getCharQuad(c, text->scale);
 		mat4 absMatrix = text->absMatrix();
 		for (int j = 0; j < 4; j++) {
 			m_vData[m_count * 4 + j] = quad.v[j];
@@ -264,7 +271,7 @@ void FontBatch::render(Text *text) {
 		for (int j = 0; j < 6; j++)
 			m_iData[m_count * 6 + j] = spriteIndices[j] + m_count * 4;
 
-		start.x = quad.v[0].pos.x + text->letterSpacing;
+		start.x += quad.v[0].pos.x + text->letterSpacing;
 		m_count++;
 	}		
 }
