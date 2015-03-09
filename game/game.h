@@ -17,7 +17,7 @@
 #include "render2d.h"
 #include "scene.h"
 
-#define SPRITE_COUNT 1
+#define SPRITE_COUNT 5
 
 struct Game {	
 	
