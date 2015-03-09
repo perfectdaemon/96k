@@ -151,10 +151,10 @@ Quad_PTC_324 Font::getCharQuad(uchar c, float scale) {
 	if (!cd)
 		return q;	
 	
-	q.v[0].pos = vec3(cd->w, cd->py + cd->h, 0) * scale;
-	q.v[1].pos = vec3(cd->w, cd->py,		 0) * scale;
-	q.v[2].pos = vec3(0,	 cd->py,		 0) * scale;
-	q.v[3].pos = vec3(0,	 cd->py + cd->h, 0) * scale;
+	q.v[0].pos = vec3(cd->w, cd->py + cd->h, 0.0f) * scale;
+	q.v[1].pos = vec3(cd->w, cd->py,		 0.0f) * scale;
+	q.v[2].pos = vec3(0,	 cd->py,		 0.0f) * scale;
+	q.v[3].pos = vec3(0,	 cd->py + cd->h, 0.0f) * scale;
 
 	q.v[0].tc = vec2(cd->tx + cd->tw, cd->ty + cd->th);
 	q.v[1].tc = vec2(cd->tx + cd->tw, cd->ty		 );
