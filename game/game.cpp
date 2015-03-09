@@ -17,10 +17,7 @@
 #include "resources.h"
 
 Game::Game() 
-{
-	
-	Default::init();
-
+{	
 	atl = TextureAtlas::init(new Stream("data//atlas.tga"), TexExt::extTga, new Stream("data//atlas.atlas"), TextureAtlasExt::extCheetah, true);
 
 	for (int i = 0; i < SPRITE_COUNT; i++) {
@@ -30,17 +27,10 @@ Game::Game()
 		
 	}			
 
-	//sprites[1]->vertices[0].tc /= 4.0f;
-	//sprites[1]->vertices[1].tc /= 4.0f;
-	//sprites[1]->vertices[3].tc /= 4.0f;
-	//sprites[1]->setSize(5.0f, 5.0f);
-
-
 	mat = Material::init(Default::spriteShader);
 	mat->addTexture(atl, "uDiffuse", 0);	
 
-	camera = new Camera();	
-	//camera->setProjParams(0, 0, 20, 20, 45, -1, 100, pmOrtho, pTopLeft);
+	camera = new Camera();		
 
 	font = Font::init(new Stream("data//Times New Roman16.bmp"));
 	fbatch = new FontBatch(font);
@@ -51,7 +41,7 @@ Game::Game()
 }
 
 Game::~Game() 
-{
+{	
 	for (int i = 0; i < SPRITE_COUNT; i++)
 		delete sprites[i];
 	delete mat;	
@@ -59,8 +49,7 @@ Game::~Game()
 	delete text1;
 	delete font;
 	delete fbatch;
-	delete camera;
-	Default::deinit();
+	delete camera;	
 }
 
 void Game::pause() 
@@ -79,7 +68,7 @@ void Game::update()
 }
 
 void Game::render() {
-	Render::clear(CLEAR_ALL, 0.0f, 0.5f, 0.8f, 1.0f);	
+	Render::clear(CLEAR_ALL, 0.0f, 0.5f, 0.8f, 1.0f);		
 	camera->update();
 	
 	mat->bind();	

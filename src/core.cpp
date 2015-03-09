@@ -12,8 +12,9 @@
 {=================================================================*/
 #include "core.h"
 #include "render.h"
+#include "resources.h"
 
-//{ Core ----------------------------------------------
+// Core ----------------------------------------------
 float Core::deltaTime;
 int Core::lastTime, Core::fpsTime, Core::fps;
 getTimePtr Core::getTime;
@@ -25,23 +26,22 @@ void Core::init(const char *path, getTimePtr getTime) {
 
 	input = new Input();
 	Core::getTime = getTime;
-    Stream::init(path);
+    //Stream::init(path);
     Render::init();
+	Default::init();
 
 	game = new Game();
     fpsTime = getTime();
     lastTime = fpsTime;
-    fps = 0;
+    fps = 0;	
 }
 
 void Core::deinit() {
 	LOG("Core::deinit\n");
-    delete game;	
-	LOG("Core::deinit\n");
-    delete input;	
-	LOG("Core::deinit\n");
-    Render::deinit();
-	LOG("Core::deinit\n");
+    delete game;		
+    delete input;		
+	Default::deinit();
+    Render::deinit();	
 }
 
 void Core::pause() {
@@ -97,4 +97,3 @@ void Core::inputEvent(const InputEvent &e) {
 	input->inputEvent(e);
     game->inputEvent(e);
 }
-//}
