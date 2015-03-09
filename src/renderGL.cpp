@@ -429,12 +429,19 @@ void Texture::bind(int sampler) {
 	Render::setTexture(obj, sampler);
 }
 
-// TextureAtlas ----------------------------------------------
-
-TextureAtlas::TextureAtlas() {
-
+char * createSubStr(const char *src, int start, int count) {
+	if (!src)
+		return NULL;
+	
+	// calc real count to transfer
+	count = min(count, strlen(src) - start);
+	char *res = new char[count + 1];
+	memcpy(res, src + start, count);
+	res[count] = 0;	
+	return res;
 }
 
+// TextureAtlas ----------------------------------------------
 char ** parseLine(const char *line, const char separator, int &count) {
 	int length = strlen(line);
 	count = 1;
@@ -449,16 +456,16 @@ char ** parseLine(const char *line, const char separator, int &count) {
 	for (int i = 0; i < length; i++) {
 		if (line[i] == separator) {
 
-			result[j] = new char[i - start + 1];
-			memcpy(result[j], &line[start], i - start);
-			result[j][i - start] = '\0';
-			start = i + 1;
-			j++;
+			result[j++] = createSubStr(line, start, i - start);			
+			start = i + 1;			
 		}
 	}
-	result[j] = new char[length - start + 1];
-	memcpy(result[j], &line[start], length - start);
-	result[j][length - start] = '\0';
+	
+	if (start < length) 
+		result[j] = createSubStr(line, start, length - start);		
+	
+	else
+		result[j] = NULL;
 	
 	return result;
 }
@@ -497,15 +504,19 @@ TextureAtlas* TextureAtlas::init(Stream *imageStream, TexExt ext,
 	delete [] lines[0];
 
 	for (int i = 1; i < linesCount; i++) {
+		if (!lines[i]) {
+			LOG("TextureAtlas: can not parse line %d, null string\n", i);
+			continue;
+		}
 		int columnCount = 0;
 		char **columns = parseLine(lines[i], '\t', columnCount);
 		if (columnCount < 9) {
-			LOG("TextureAtlas: can not parse line %d\n", i);
+			LOG("TextureAtlas: can not parse line %d\n, column count is %d", i, columnCount);
 			continue;
 		}
 
 		TextureRegion *r = new TextureRegion();
-		r->name = new char[strlen(columns[0])];
+		r->name = new char[strlen(columns[0]) + 1];
 		strcpy(r->name, columns[0]);
 		r->texture = a;
 		r->tx = atoi(columns[1]) / (float)a->width;
@@ -516,8 +527,9 @@ TextureAtlas* TextureAtlas::init(Stream *imageStream, TexExt ext,
 
 		a->m_regions.push(r);
 
-		for (int j = 0; j < columnCount; delete [] columns[j++])
-			;
+		for (int j = 0; j < columnCount; j++)
+			if (columns[j])
+				delete columns[j];
 		
 		delete [] columns;
 		

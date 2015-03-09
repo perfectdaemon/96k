@@ -306,7 +306,7 @@ protected:
 	//static char ** parseLine(const char *line, const char separator, int &count);
 public:
 	static TextureAtlas* init(Stream *imageStream, TexExt ext, Stream *atlasStream, TextureAtlasExt extAtlas, bool freeStreamOnFinish = true);
-	TextureAtlas();
+	TextureAtlas() {}
 	~TextureAtlas();
 
 	TextureRegion* getRegion(const char *name);
