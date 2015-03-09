@@ -430,9 +430,8 @@ void Texture::bind(int sampler) {
 }
 
 char * createSubStr(const char *src, int start, int count) {
-	if (!src)
+	if (!src || count <= 0)
 		return NULL;
-	
 	// calc real count to transfer
 	count = min(count, strlen(src) - start);
 	char *res = new char[count + 1];
