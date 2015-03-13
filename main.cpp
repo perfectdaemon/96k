@@ -102,12 +102,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 }
 
 int main(int argc, char *argv[]) {
-	const long style = WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+	const long style = WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 
 	RECT r;
 	SetRect(&r, 0, 0, WIDTH, HEIGHT);
 	AdjustWindowRect(&r, style, false);
 	HWND handle = CreateWindowA("STATIC", TITLE, style, 0, 0, r.right - r.left, r.bottom - r.top, NULL, NULL, NULL, NULL);
+	
 	SetWindowLongA(handle, GWL_WNDPROC, LONG(&WndProc));
 
 	HDC dc = GetDC(handle);
@@ -120,11 +121,11 @@ int main(int argc, char *argv[]) {
 	pfd.cColorBits		= 32;
 	pfd.cAlphaBits		= 8;
 	pfd.cDepthBits		= 24;
-	pfd.cStencilBits	= 8;
+	pfd.cStencilBits	= 8;	
 
 	SetPixelFormat(dc, ChoosePixelFormat(dc, &pfd), &pfd);
 	HGLRC rc = wglCreateContext(dc);
-	wglMakeCurrent(dc, rc);
+	wglMakeCurrent(dc, rc);	
 
 	QueryPerformanceFrequency(&timeFreq);
 	QueryPerformanceCounter(&startTime);
@@ -135,6 +136,8 @@ int main(int argc, char *argv[]) {
 	Core::resume();
 	Core::resize(WIDTH, HEIGHT);
 	Core::update();
+
+	ShowWindow(handle, SW_SHOW);
 
 	MSG msg;
 	while (!quit)
