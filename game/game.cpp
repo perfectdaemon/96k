@@ -35,7 +35,7 @@ Game::Game()
 	LOG("end material init init\n");
 
 	camera = new Camera();		
-	return;
+	//return;
 	font = Font::init(new Stream("data/Times New Roman16.bmp"));
 	fbatch = new FontBatch(font);
 	
@@ -50,9 +50,9 @@ Game::~Game()
 		delete sprites[i];
 	delete mat;	
 	delete atl;
-	//delete text1;
-	//delete font;
-	//delete fbatch;
+	delete text1;
+	delete font;
+	delete fbatch;
 	delete camera;	
 }
 
@@ -80,7 +80,7 @@ void Game::render() {
 	for (int i = 0; i < SPRITE_COUNT; i++)
 		batch.render(sprites[i]);
 	batch.end();
-	return;
+	
 	fbatch->begin();
 		fbatch->render(text1);
 	fbatch->end();
