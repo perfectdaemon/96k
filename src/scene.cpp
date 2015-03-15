@@ -102,7 +102,7 @@ void Camera::rebuildProjMatrix() {
 Camera::Camera() : Node() {
 	m_scale = 1.0f;
 	setProjParams(0, 0, Render::width, Render::height, 45.0f, 0.01f, 100.0f, pmOrtho, pTopLeft);
-	setViewParams(vec3(0.0f, 0.0f, 10.0f), vec3(0.0f), vec3(0.0f, 1.0f, 0.0f));
+	setViewParams(vec3(0.0f, 0.0f, 100.0f), vec3(0.0f), vec3(0.0f, 1.0f, 0.0f));
 }
 
 	
@@ -182,6 +182,8 @@ vec2 Camera::screenToScene(vec2 &screenPosition) {
 
 		case pmPerspective:
 			LOG("camera: screenToScene with perpective camera is not implemented");
+			return vec2(0.0f);
+		default:
 			return vec2(0.0f);
 	}
 }

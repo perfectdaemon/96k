@@ -17,12 +17,18 @@
 #include "render2d.h"
 #include "scene.h"
 
-#define SPRITE_COUNT 5
+struct Player {
+	Sprite *parent;
+	Sprite *head, *body, *shoulders;
+
+	Player();
+	~Player() { delete parent; delete head; delete body; delete shoulders; }
+	void update();
+};
 
 struct Game {	
 	
 	SpriteBatch batch;
-	Sprite *sprites[SPRITE_COUNT];
 
 	Camera *camera;
 	
@@ -32,6 +38,8 @@ struct Game {
 	Font *font;
 	FontBatch *fbatch;
 	Text *text1;
+
+	Player *player;
 
     Game();
     ~Game();

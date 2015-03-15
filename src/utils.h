@@ -137,6 +137,8 @@ struct vec2 {
 
 	vec2 rotate(float angle) { float s = sinf(angle), c = cosf(angle); return vec2(x*c - y*s, x*s + y*c); }
 	vec2 lerp(const vec2 &v, float t) { return *this + (v - *this) * t; }
+
+	float getRotationAngle() { return atan2(y, x) *  _RAD2DEG; }
 };
 
 struct vec3 {

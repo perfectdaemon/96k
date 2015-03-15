@@ -84,8 +84,11 @@ struct Input {
 				break;
 			case IK_TOUCH : {
 					InputTouch &t = touch[e.info.touch.id];
-					if (e.state != IS_MOVE)
+					if (e.state != IS_MOVE) {
 						t.down = e.state == IS_DOWN;
+						if (e.state == IS_DOWN)
+							t.start = vec2(e.info.touch.x, e.info.touch.y);
+					}
 					t.pos = vec2(e.info.touch.x, e.info.touch.y);
 					break;
 				}

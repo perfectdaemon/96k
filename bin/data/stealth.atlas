@@ -1,0 +1,4 @@
+textures: atlas.png
+player_head.png	1	1	75	59	0	0	59	75	r
+player_body.png	1	62	79	47	0	0	79	47	
+player_shoulders.png	82	1	37	115	0	0	115	37	r

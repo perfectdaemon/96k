@@ -16,38 +16,61 @@
 #include "utils.h"
 #include "resources.h"
 
+Player::Player() {
+	parent = new Sprite();
+
+	body = new Sprite();
+	body->setParent(parent);
+	body->position.z = 1;
+	//body->setVerticesColor(vec4(0.3f, 0.3f, 0.3f, 1.0f));	
+
+	head = new Sprite();
+	head->setPivot(vec2(0.5f, 0.7f));
+	head->setParent(body);	
+	head->position.z = 2;
+	//head->setVerticesColor(vec4(0.6f, 0.3f, 0.3f, 1.0f));
+
+	shoulders = new Sprite();	
+	shoulders->setParent(body);
+	shoulders->position.z = 2;
+	//shoulders->setVerticesColor(vec4(0.3f, 0.3f, 0.6f, 1.0f));
+}
+
+void Player::update() {
+	vec2 dir = (Core::input->mouse.pos - parent->position.xy());
+	//dir.normalize();
+	head->setRotation(dir.getRotationAngle() + 90);
+}
+
 Game::Game() 
 {	
-	LOG("start atlas init\n");
-	atl = TextureAtlas::init(new Stream("data/atlas.tga"), TexExt::extTga, new Stream("data/atlas.atlas"), TextureAtlasExt::extCheetah, true);
-	LOG("end atlas init\n");
-	LOG("start sprite init\n");
-	for (int i = 0; i < SPRITE_COUNT; i++) {
-		sprites[i] = new Sprite(128.0f, 256.0f, vec2(0.0f, 0.0f));
-		sprites[i]->setTextureRegion(atl->getRegion("lander.png"), true);		
-		sprites[i]->position = vec3(150 + 50.0f * i, 150 + 50.0f * i, i);		
-		
-	}			
-	LOG("end sprite init\n");
-	LOG("start material init\n");
+	
+	atl = TextureAtlas::init(new Stream("data/stealth.tga"), TexExt::extTga, new Stream("data/stealth.atlas"), TextureAtlasExt::extCheetah, true);
+	
 	mat = Material::init(Default::spriteShader);
 	mat->addTexture(atl, "uDiffuse", 0);	
-	LOG("end material init init\n");
 
-	camera = new Camera();		
-	//return;
+	camera = new Camera();	
+	camera->setScale(0.5f);
+	
 	font = Font::init(new Stream("data/Times New Roman16.bmp"));
 	fbatch = new FontBatch(font);
 	
 	text1 = new Text();
 	text1->text = "ÏðÎâÅðÊà. Ñîððè çà çàáîð";
 	text1->position = vec3(300, 100, 0);
+
+	player = new Player();
+	player->parent->position = vec3(100, 200, 5);
+	player->body->setTextureRegion(atl->getRegion("player_body.png"));
+	player->head->setTextureRegion(atl->getRegion("player_head.png"));
+	player->shoulders->setTextureRegion(atl->getRegion("player_shoulders.png"));
 }
 
 Game::~Game() 
 {	
-	for (int i = 0; i < SPRITE_COUNT; i++)
-		delete sprites[i];
+	delete player;
+	
 	delete mat;	
 	delete atl;
 	delete text1;
@@ -68,7 +91,7 @@ void Game::resume()
 
 void Game::update() 
 {
-
+	player->update();
 }
 
 void Game::render() {
@@ -76,9 +99,10 @@ void Game::render() {
 	camera->update();
 	
 	mat->bind();	
-	batch.begin();
-	for (int i = 0; i < SPRITE_COUNT; i++)
-		batch.render(sprites[i]);
+	batch.begin();	
+		batch.render(player->body);		
+		batch.render(player->head);
+		batch.render(player->shoulders);
 	batch.end();
 	
 	fbatch->begin();

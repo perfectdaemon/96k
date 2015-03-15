@@ -32,6 +32,10 @@ struct FontRes {
 	~FontRes() { delete [] data; delete texture; }
 };
 
+struct MeshRes {
+
+};
+
 struct Default {
 public:
 	static bool isInited;

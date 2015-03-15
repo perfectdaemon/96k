@@ -14,8 +14,7 @@ protected:
 public:
 	Vertex_PTC_324 vertices[4];
 
-	Sprite(float width, float height, const vec2 &pivot);
-	Sprite() :m_width(1.0f), m_height(1.0f), m_pivot(0.5f, 0.5f), m_rot(0) {}
+	Sprite(float width = 1.0f, float height = 1.0f, const vec2 &pivot = vec2(0.5f, 0.5f));	
 	~Sprite() {}
 
 	virtual float width() { return m_width; }

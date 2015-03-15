@@ -20,7 +20,7 @@ bool quit = false;
 const int WIDTH	 = 800;
 const int HEIGHT = 600;
 
-const char * TITLE = "Harsh Engine";	
+const char * TITLE = "96k demo";	
 LARGE_INTEGER timeFreq, startTime;
 
 int getTime() {

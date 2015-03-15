@@ -41,7 +41,7 @@ public:
 enum CameraProjectionMode { pmOrtho, pmPerspective };
 enum CameraPivotMode { pTopLeft, pCenter, pBottomRight };
 
-struct Camera : Node {
+struct Camera : public Node {
 private:
 	CameraPivotMode m_pivotMode;
 	CameraProjectionMode m_projMode;
@@ -73,6 +73,10 @@ public:
 	void update();
 
 	void render() override { }
+};
+
+struct Mesh : public Node {
+
 };
 
 #endif // SCENE_H
